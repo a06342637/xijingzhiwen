@@ -1,0 +1,7 @@
+node_modules/
+dist/
+release/
+.test-data/
+.verification/
+*.log
+vendor-resources/

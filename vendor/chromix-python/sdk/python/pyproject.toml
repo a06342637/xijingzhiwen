@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chromix"
+version = "152.0.7977.82.post5"
+description = "Drive the Chromix stealth Chromium engine with a CloakBrowser-compatible API."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [{ name = "xiaozhou26" }]
+keywords = ["chromium", "stealth", "browser", "automation", "anti-bot", "cloakbrowser"]
+classifiers = [
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python :: 3",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+]
+
+[project.urls]
+Homepage = "https://github.com/xiaozhou26/Chromix"
+Source = "https://github.com/xiaozhou26/Chromix"
+Issues = "https://github.com/xiaozhou26/Chromix/issues"
+
+[project.optional-dependencies]
+playwright = ["playwright"]
+measured = ["playwright", "Pillow>=10"]
+cookies = ["cryptography>=42"]
+
+[project.scripts]
+chromix = "chromix.__main__:main"
+
+[tool.setuptools]
+packages = ["chromix"]
+
+[tool.setuptools.package-data]
+chromix = ["device_probe.js", "device_render_probe.js", "canvas_chain_probe.js", "render_integration_probe.js", "gpu_backend_probe.js"]

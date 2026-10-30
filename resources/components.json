@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "python": "3.13.9",
+  "arches": {
+    "arm64": {
+      "url": "https://www.python.org/ftp/python/3.13.9/python-3.13.9-embed-arm64.zip",
+      "sha256": "cba392bd5c7aed68b26d1b523822cc3d80802c085481dfde79262ebfc7179d26",
+      "wheels": [
+        {
+          "name": "playwright",
+          "version": "1.64.1",
+          "url": "https://files.pythonhosted.org/packages/c5/4b/d7ddde9467a5fcfe6a0d3c954732332e98a4f4a9025fd42c8d091c16e5f9/playwright-1.64.1-py3-none-win_arm64.whl",
+          "sha256": "983ccd085453ea5a7588193657fc349a6ffbf7bf7ba663fd58dc81e4aa3af9d9",
+          "filename": "playwright-1.64.1-py3-none-win_arm64.whl"
+        },
+        {
+          "name": "pyee",
+          "version": "13.0.1",
+          "url": "https://files.pythonhosted.org/packages/a0/c4/b4d4827c93ef43c01f599ef31453ccc1c132b353284fc6c87d535c233129/pyee-13.0.1-py3-none-any.whl",
+          "sha256": "af2f8fede4171ef667dfded53f96e2ed0d6e6bd7ee3bb46437f77e3b57689228",
+          "filename": "pyee-13.0.1-py3-none-any.whl"
+        },
+        {
+          "name": "greenlet",
+          "version": "3.4.0",
+          "url": "https://files.pythonhosted.org/packages/9b/96/795619651d39c7fbd809a522f881aa6f0ead504cc8201c3a5b789dfaef99/greenlet-3.4.0-cp313-cp313-win_arm64.whl",
+          "sha256": "9390ad88b652b1903814eaabd629ca184db15e0eeb6fe8a390bbf8b9106ae15a",
+          "filename": "greenlet-3.4.0-cp313-cp313-win_arm64.whl"
+        },
+        {
+          "name": "pillow",
+          "version": "12.1.0",
+          "url": "https://files.pythonhosted.org/packages/88/09/c99950c075a0e9053d8e880595926302575bc742b1b47fe1bbcc8d388d50/pillow-12.1.0-cp313-cp313-win_arm64.whl",
+          "sha256": "9212d6b86917a2300669511ed094a9406888362e085f2431a7da985a6b124f45",
+          "filename": "pillow-12.1.0-cp313-cp313-win_arm64.whl"
+        },
+        {
+          "name": "typing_extensions",
+          "version": "4.15.0",
+          "url": "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl",
+          "sha256": "f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548",
+          "filename": "typing_extensions-4.15.0-py3-none-any.whl"
+        },
+        {
+          "name": "langcodes",
+          "version": "3.5.1",
+          "url": "https://files.pythonhosted.org/packages/dd/c1/d10b371bcba7abce05e2b33910e39c33cfa496a53f13640b7b8e10bb4d2b/langcodes-3.5.1-py3-none-any.whl",
+          "sha256": "b6a9c25c603804e2d169165091d0cdb23934610524a21d226e4f463e8e958a72",
+          "filename": "langcodes-3.5.1-py3-none-any.whl"
+        },
+        {
+          "name": "tzdata",
+          "version": "2026.6",
+          "url": "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl",
+          "sha256": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl"
+        }
+      ]
+    },
+    "x64": {
+      "url": "https://www.python.org/ftp/python/3.13.9/python-3.13.9-embed-amd64.zip",
+      "sha256": "91d828c2da3a029b41699e918674a0cb379c02cf20dab9c501306885f837402a",
+      "wheels": [
+        {
+          "name": "playwright",
+          "version": "1.64.1",
+          "url": "https://files.pythonhosted.org/packages/96/0a/64db6851aa1852a4f76be28eea71d4e2bf9f3ce493ee2e66939426729046/playwright-1.64.1-py3-none-win_amd64.whl",
+          "sha256": "5e240a79464434c9260957b9ef59a5808e02e96e3fcabdc717fd7485260b9730",
+          "filename": "playwright-1.64.1-py3-none-win_amd64.whl"
+        },
+        {
+          "name": "pyee",
+          "version": "13.0.1",
+          "url": "https://files.pythonhosted.org/packages/a0/c4/b4d4827c93ef43c01f599ef31453ccc1c132b353284fc6c87d535c233129/pyee-13.0.1-py3-none-any.whl",
+          "sha256": "af2f8fede4171ef667dfded53f96e2ed0d6e6bd7ee3bb46437f77e3b57689228",
+          "filename": "pyee-13.0.1-py3-none-any.whl"
+        },
+        {
+          "name": "greenlet",
+          "version": "3.4.0",
+          "url": "https://files.pythonhosted.org/packages/a1/c2/19b664b7173b9e4ef5f77e8cef9f14c20ec7fce7920dc1ccd7afd955d093/greenlet-3.4.0-cp313-cp313-win_amd64.whl",
+          "sha256": "849f8bc17acd6295fcb5de8e46d55cc0e52381c56eaf50a2afd258e97bc65940",
+          "filename": "greenlet-3.4.0-cp313-cp313-win_amd64.whl"
+        },
+        {
+          "name": "pillow",
+          "version": "12.1.0",
+          "url": "https://files.pythonhosted.org/packages/e5/07/74a9d941fa45c90a0d9465098fe1ec85de3e2afbdc15cc4766622d516056/pillow-12.1.0-cp313-cp313-win_amd64.whl",
+          "sha256": "461f9dfdafa394c59cd6d818bdfdbab4028b83b02caadaff0ffd433faf4c9a7a",
+          "filename": "pillow-12.1.0-cp313-cp313-win_amd64.whl"
+        },
+        {
+          "name": "typing_extensions",
+          "version": "4.15.0",
+          "url": "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl",
+          "sha256": "f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548",
+          "filename": "typing_extensions-4.15.0-py3-none-any.whl"
+        },
+        {
+          "name": "langcodes",
+          "version": "3.5.1",
+          "url": "https://files.pythonhosted.org/packages/dd/c1/d10b371bcba7abce05e2b33910e39c33cfa496a53f13640b7b8e10bb4d2b/langcodes-3.5.1-py3-none-any.whl",
+          "sha256": "b6a9c25c603804e2d169165091d0cdb23934610524a21d226e4f463e8e958a72",
+          "filename": "langcodes-3.5.1-py3-none-any.whl"
+        },
+        {
+          "name": "tzdata",
+          "version": "2026.6",
+          "url": "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl",
+          "sha256": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
+          "filename": "tzdata-2026.6-py2.py3-none-any.whl"
+        }
+      ]
+    }
+  }
+}

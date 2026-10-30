@@ -1,0 +1,104 @@
+{
+  "name": "qijing",
+  "version": "0.1.2",
+  "private": true,
+  "description": "栖境 · Windows 多环境浏览器管理软件",
+  "author": "Qijing contributors",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "dev": "npm run build && electron .",
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "test": "tsx --test tests/*.test.ts",
+    "start": "electron .",
+    "pack:arm64": "npm run build && electron-builder --win nsis --arm64 --publish never",
+    "pack:x64": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "pack": "npm run build && node scripts/pack.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@xiaoxiaofeihh/chromix": "file:vendor/chromix-node",
+    "electron-updater": "^6.8.11",
+    "lucide-react": "^0.577.0",
+    "playwright-core": "1.64.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "sql.js": "1.15.2",
+    "yauzl": "3.4.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/sql.js": "^1.4.9",
+    "@types/yauzl": "^2.10.3",
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0",
+    "esbuild": "^0.27.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "build": {
+    "appId": "io.qijing.desktop",
+    "productName": "栖境",
+    "asar": true,
+    "directories": {
+      "output": "../xijing发行版本/${version}"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/chromix-python",
+        "to": "chromix-python"
+      },
+      {
+        "from": "vendor/chromix-tools",
+        "to": "chromix-tools"
+      },
+      {
+        "from": "resources",
+        "to": "config"
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/sql.js/dist/sql-wasm.wasm",
+      "node_modules/playwright-core/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "signExecutable": false,
+      "icon": "resources/icon.ico",
+      "artifactName": "Qijing-${version}-${arch}-Setup.${ext}",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "栖境",
+      "include": "scripts/installer.nsh"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "a06342637",
+      "repo": "xijingzhiwen",
+      "releaseType": "release"
+    },
+    "releaseInfo": {
+      "releaseNotesFile": "scripts/release-notes.md"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/a06342637/xijingzhiwen.git"
+  }
+}
