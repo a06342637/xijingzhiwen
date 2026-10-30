@@ -13,8 +13,9 @@ app.whenReady().then(async()=>{
   const dir=path.join(root,arch);await fs.mkdir(dir,{recursive:true});
   const config=path.join(dir,'app-update.yml');await fs.writeFile(config,'updaterCacheDirName: isolated-update-cache\n');
   const adapter={version:'0.1.1',name:'qijing-update-test',isPackaged:true,appUpdateConfigPath:config,userDataPath:dir,baseCachePath:dir,whenReady:()=>Promise.resolve(),relaunch(){},quit(){},onQuit(){}};
-  const updater=new NsisUpdater({provider:'github',owner:'a06342637',repo:'xijingzhiwen',channel:arch==='arm64'?'latest-arm64':'latest'},adapter);
+  const updater=new NsisUpdater(null,adapter);
   updater.httpExecutor=new ElectronHttpExecutor();updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.disableDifferentialDownload=true;updater.disableWebInstaller=true;
+  updater.setFeedURL({provider:'github',owner:'a06342637',repo:'xijingzhiwen',channel:arch==='arm64'?'latest-arm64':'latest'});
   updater.on('error',()=>{});
   const result=await updater.checkForUpdates();if(result.updateInfo.version!==require('../package.json').version)throw new Error('Unexpected published version');
   if(!result.updateInfo.files[0].url.includes('-'+arch+'-'))throw new Error('Wrong architecture');
