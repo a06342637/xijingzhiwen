@@ -8,9 +8,11 @@ const gh=(...args)=>execFileSync('gh',args,{encoding:'utf8',stdio:['ignore','pip
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 if(git('status','--porcelain'))throw new Error('Commit all source changes before publishing');
 execFileSync('git',['fetch','origin','main'],{stdio:'inherit'});
-if(git('rev-parse','HEAD')!==git('rev-parse','origin/main'))throw new Error('Push the verified commit to main first');
 const repo='a06342637/xijingzhiwen',tag='v'+pkg.version,files=[];
 if(process.env.GITHUB_REF?.startsWith('refs/tags/')&&process.env.GITHUB_REF!=='refs/tags/'+tag)throw new Error('Tag must match package version');
+if(process.env.GITHUB_REF?.startsWith('refs/tags/')){
+ if(spawnSync('git',['merge-base','--is-ancestor','HEAD','origin/main']).status!==0)throw new Error('Release tag must be a verified main commit');
+}else if(git('rev-parse','HEAD')!==git('rev-parse','origin/main'))throw new Error('Push the verified commit to main first');
 for(const arch of ['arm64','x64']){
  const manifest=arch==='arm64'?'latest-arm64.yml':'latest.yml';
  const metadata=JSON.parse(await fs.readFile(path.join(releaseDir,manifest),'utf8'));
