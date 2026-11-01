@@ -4,7 +4,7 @@ Windows 多环境浏览器管理软件。管理界面使用 Electron / React / T
 
 ## 使用
 
-1. 安装对应架构的 `Qijing-0.1.5-arm64-Setup.exe` 或 `Qijing-0.1.5-x64-Setup.exe`。
+1. 安装对应架构的 `Qijing-0.1.6-arm64-Setup.exe` 或 `Qijing-0.1.6-x64-Setup.exe`。
 2. 在“内核管理”下载或导入 Chromix。候选基线为 `155.0.8059.79`，下载验证 SHA-256、PE 架构和许可证目录。
 3. 点击“新建环境”，选择内核、代理及高级配置，保存后启动。登录、浏览、下载由用户自己操作。
 4. 菜单中可复制配置、归档、打开下载目录、迁移加密 Cookie、检查环境。复制配置生成新种子，不复制登录数据。
@@ -86,3 +86,13 @@ npm run pack
 更新日志保存到数据目录 logs/software-update.log，不再依赖终端。更新验证脚本日志保存于 .verification/github-update/updater.log。关闭终端后验证脚本不会因 EPIPE 弹窗。
 
 安卓型号在 UA 和 Client Hints 中一致，横屏/竖屏通过原生屏幕方向参数配置，编辑已有预设使用保存的方向。QIJING_SMOKE_DEVICE_MATRIX=1 与 QIJING_SMOKE_DEVICES=1 组合执行全部 13 组移动设备的横竖屏实测；QIJING_SMOKE_DEVICE_UI=1 检查预设显示与禁用控件。
+
+## 0.1.6 硬件组合
+
+新建环境和软件默认设置提供 CPU/显卡组合选择、搜索和品牌筛选。库含 50 个 CPU、63 个 GPU 型号、49 套搭配建议，按 Windows/macOS/Linux 筛选。NVIDIA GTX/RTX 20–50、AMD Radeon RX 500/6000/7000/9000、Intel UHD/Iris/Arc A/B、AMD 集显、Apple M 均有常见样本。不是市场全部型号清单，也不是采集的完整原生设备记录。
+
+CPU 标签仅软件内记录，hardwareConcurrency 按型号的逻辑线程设置；deviceMemory 是限幅/离散浏览器值（常见为 8），组合 16/32/64GB 等为配置记录。火狐无 deviceMemory API。WebGL 名称格式按引擎和系统变化；图形能力、字体、指令和 WebGPU 仍受真实机器限制。软件渲染或受限 GPU 上下文可能不覆盖名称，不能据此保证真实电脑等价性。
+
+硬件随机默认开启，一键或批量随机从当前系统组合选取；关闭后随机保留已选 CPU/内存/GPU。移动模拟不会混入电脑组合。配置保存后重启生效，查看环境诊断核对真实返回值。核数标签已改为逻辑线程数。
+
+型号参考：NVIDIA/AMD/Intel/Apple 官方产品资料；WebGL 字符串是平台格式模板，不是型号设备 ID、驱动或完整 GPU 参数库。QIJING_SMOKE_HARDWARE=1 检查选择联动、两种内核的硬件启动及实际返回限制。

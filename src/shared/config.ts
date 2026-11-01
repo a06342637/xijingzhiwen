@@ -2,8 +2,11 @@ import { isIP } from 'node:net';
 import path from 'node:path';
 import { FEATURES, profileSchema, type Profile, type ProxyConfig } from './model';
 import {fieldSupported} from './devices';
+import {CPUS,GPUS,hardwareCompatible} from './hardware';
 export function validateProfile(raw:unknown):Profile {
- const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',deviceModel:'',...p.values};const v=p.values;
+ const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',deviceModel:'',cpuModel:'',gpuModel:'',hardwareRam:16,hardwareRandom:true,...p.values};const v=p.values;
+ for(const [key,items] of [['cpuModel',CPUS],['gpuModel',GPUS]] as const)if(v[key]&&!items.some(x=>x.id===v[key]&&x.systems.includes(v.platform as any)))throw new Error('硬件型号不存在或不支持当前系统：'+key);
+ if(v.cpuModel&&v.gpuModel&&!hardwareCompatible({id:'custom',cpu:String(v.cpuModel),gpu:String(v.gpuModel),ram:Number(v.hardwareRam)},String(v.platform)))throw new Error('CPU 与 GPU 组合不兼容当前系统或集成显卡平台');
  if(v.deviceModel&&(!/^[a-zA-Z0-9 ._+-]{1,80}$/.test(String(v.deviceModel))||v.deviceType!=='android'))throw new Error('型号仅用于安卓，支持最多 80 个英文、数字、空格和 ._+- 字符');
  if(v.engine==='firefox'){
   if(p.mode==='measured'||v.deviceType!=='desktop')throw new Error('火狐目前只支持自定义电脑环境');

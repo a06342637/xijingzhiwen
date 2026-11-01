@@ -6,6 +6,7 @@ import {Store,inside} from './store';
 import {Kernels} from './kernels';
 import {acquireProfileLock,copyProfile} from './profile-files';
 import {CAPABILITIES,type Profile,type Kernel,type Report,type Check,type Extension,type ProxyConfig} from '../shared/model';
+import {CPUS,GPUS} from '../shared/hardware';
 import {validateProfile} from '../shared/config';
 import {fieldSupported} from '../shared/devices';
 type Runner={profile?:Profile;release?:()=>Promise<void>;child:ChildProcess;pending:Map<string,{resolve:(v:any)=>void;reject:(e:Error)=>void;timer:NodeJS.Timeout}>;kernelId:string;status:string;busy?:boolean};
@@ -75,6 +76,7 @@ export class Browsers {
    const pixel=checks.find(c=>c.feature==='pixelNoise')!;pixel.observed=o.canvas;pixel.detail='采集重复读回摘要；不能据此证明跨种子噪声。使用内核图形验证完成对照。';
    const audio=checks.find(c=>c.feature==='audioRender')!;audio.observed=o.audio;audio.detail='已采集音频图输出摘要和采样率；单次摘要不能证明隔离机制。';const fonts=checks.find(c=>c.feature==='fontPolicy')!;fonts.observed=o.fonts;fonts.detail='字体可用性采样不是字形文件来源或名单限制的完整验收。';const quota=checks.find(c=>c.feature==='quota')!;quota.observed=o.storage;quota.detail='采集实际存储估计；配额写入、Buckets 等另需专门验收。';
    if(v.engine==='firefox'){check('brand','Firefox',o.identity.ua.includes('Firefox/')?'Firefox':undefined,'火狐原生没有 Chromium Client Hints。');check('platform',({windows:'Win32',macos:'MacIntel',linux:'Linux x86_64'} as any)[String(v.platform)],o.identity.platform);for(const c of checks)if(!fieldSupported(c.feature,v)&&c.feature!=='webgpu'&&c.feature!=='deviceScale'){c.status='unsupported';c.detail='当前模式不支持此覆盖项，保留原生能力。';}}
+   for(const key of ['cpuModel','gpuModel','hardwareRam']){const row=checks.find(c=>c.feature===key);if(row){row.status='limited';row.observed=key==='cpuModel'?{record:CPUS.find(c=>c.id===v.cpuModel)?.name,logicalThreads:o.identity.cpu}:key==='gpuModel'?{record:GPUS.find(g=>g.id===v.gpuModel)?.name,webgl:o.webgl,webgpu:o.webgpu}:{record:v.hardwareRam,deviceMemory:o.identity.memory};row.detail=key==='cpuModel'?'CPU 型号仅作配置记录；只观察逻辑线程数，不证明真实型号或性能。':key==='gpuModel'?'显卡名称不改变实际 GPU 与 WebGPU；WebGL 1/2 返回值附在观察记录。':'组合内存为软件记录；deviceMemory 不等于真实物理内存。';}}
    if(v.viewportMode==='fixed')checks.push({feature:'deviceScale',label:'设备像素比 DPR',expected:Number(v.deviceScale),observed:o.screen.dpr,status:Number(v.deviceScale)===o.screen.dpr?'verified':'limited',detail:'当前窗口 CSS 像素比。'});
    if(v.deviceType!=='desktop'){for(const c of checks)if(!fieldSupported(c.feature,v)&&!['webgpu','deviceScale'].includes(c.feature)){c.status='unsupported';c.detail='移动端布局模拟不覆盖此原生能力。';}}
    if(v.deviceType!=='desktop')checks.push({feature:'mobileSimulation',label:'移动端模拟边界',status:'limited',detail:'Chromium 布局、触摸及 UA 模拟；不是 Safari/WebKit 或真实移动系统。',observed:{type:v.deviceType,ua:o.identity.ua,ch:o.identity.ch,screen:o.screen}});

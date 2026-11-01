@@ -1,3 +1,19 @@
+# 栖境 0.1.6 硬件与创建复查
+
+日期：2026-11-02，Windows ARM64。Firefox 使用 x64 Camoufox 158.0.1-beta.41。
+
+- 57 项测试通过，覆盖 50 个 CPU、63 个 GPU 的所有已提供组合在两引擎/三系统的配置校验、线程映射、随机/批量、平台不兼容组合拒绝、引擎切换格式与关闭随机保留手选配置。生产构建通过。
+- 核对 NVIDIA RTX 50 官方页、AMD Radeon 9000 官方系列页、Ryzen 9800X3D 与 Apple Mac 官方资料。预设为名称/线程配置模板，未把模型标签当作全套原生硬件采集。Intel 官方部分页面在当前网络 403，型号参数仍需逐项运行实测。
+- Chromium/Firefox 的 Windows/macOS/Linux 环境创建、启动、诊断复查通过；iPhone/iPad/Android 模拟与原有设备矩阵校验通过。
+- 新建/默认设置的硬件组合选择 UI 联动通过；CPU/GPU/内存记录保存到配置，启动时经共享校验，移动端排除桌面硬件预设。
+- 10 个代表性真实窗口硬件检查：NVIDIA RTX 5070 Ti、AMD RX 9070 XT、Intel Arc B580、Apple M4、Linux RTX 4060，分别在两引擎启动。CPU 逻辑线程数均匹配；Chromium deviceMemory 限幅到 8。
+- Firefox 的 5 个代表组合 WebGL 1 Vendor/Renderer 与设置匹配；仅名称读回通过，不证明驱动参数/像素/算力/真实设备一致。WebGL 2/WebGPU 保持实际观察与限制。
+- 本机 Chromium 图形上下文不可用/受限，5 个代表组合没有标为 WebGL 已验证，没有绕过 GPU blocklist。名称配置和启动成功不能证明这个机器完成图形覆盖验收。需要可用 GPU 的 Windows x64/ARM64 机器进一步实测。
+- 会话持久化、加密 Cookie、下载、MV3 扩展、HTTP 认证代理、批量 UI、默认预设继承回归通过。
+- CPU 标签与物理内存只在软件中记录。无法伪装真实指令集、性能、驱动、GPU 算力或完整 WebGPU；不承诺真实电脑等价、全站兼容或防关联。供应商轮换代理及跨区 DNS 继续保留边界。
+
+以下为历史版本证据。
+
 # 栖境 0.1.5 错误修复与指纹复查
 
 日期：2026-11-02，Windows ARM64；Firefox x64 兼容运行。

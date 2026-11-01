@@ -1,10 +1,11 @@
 import React from 'react';
+import {CPUS,GPUS,gpuIdentity} from '../shared/hardware';
 import {defaultValues,type Values} from '../shared/model';
 import {DEVICES,SCREEN_PRESETS,ENGINE_NAMES,applyDevice,applyScreen,fieldSupported,applyDesktop,devicePreset} from '../shared/devices';
 export function changeEngine(values:Values,engine:string){
  const defaults=defaultValues(),next:Values={...(values.deviceType==='desktop'?values:applyDesktop(values,String(values.platform))),engine,deviceType:'desktop',brand:engine==='firefox'?'Firefox':'Chrome'};
  if(engine==='firefox')for(const key of Object.keys(next))if(!fieldSupported(key,next))next[key]=defaults[key];
- return next;
+ const gpu=GPUS.find(g=>g.id===next.gpuModel);if(gpu)Object.assign(next,gpuIdentity(gpu,engine,String(next.platform)));return next;
 }
 export function DeviceEditor({values,onChange,locked=false}:{values:Values;onChange:(v:Values)=>void;locked?:boolean}){
  const preset=devicePreset(values),landscape=Number(values.screenWidth)>Number(values.screenHeight);

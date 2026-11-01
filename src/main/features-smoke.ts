@@ -23,7 +23,7 @@ export async function featureSmoke(window:BrowserWindow,output:string){
  await click('高级配置','.modal .editor-tabs button');await click('语言 / 时区','.modal .advanced-nav button');assert.equal(await js("document.querySelector('#setting-locale').value"),'ja-JP');
  await click('实验设置','.modal .editor-tabs button');assert.equal(await js("document.querySelector('#setting-fakeShadowRoot').checked"),true);
  await click('基础设置','.modal .editor-tabs button');
- await fill('.modal input[placeholder="例如：美国店铺 A"]','批量随机验收');await fill('.batch-controls input[type=number]','3');await js("document.querySelector('.batch-random input').click()");
+ await fill('.modal input[placeholder="例如：美国店铺 A"]','批量随机验收');await fill('.batch-controls input[type=number]','3');await js("document.querySelector('.batch-controls .batch-random input').click()");
  await fill('[aria-label="代理来源"]','manual');
  await js(`(()=>{const el=document.querySelector('.proxy-paste textarea');const data=new DataTransfer();data.setData('text','gate.example.test:1000:sample-account:sample-secret-JP');el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true}));})()`);await wait();
  assert.equal(await js("Array.from(document.querySelectorAll('.inline-proxy input')).find(x=>x.value==='gate.example.test')?.value"),'gate.example.test');
