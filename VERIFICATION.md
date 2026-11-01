@@ -13,6 +13,10 @@
 - 软件仅发布 Windows ARM64/x64；macOS/Linux 为身份预设，手机和平板为 Chromium 布局模拟，均不是原生系统或 WebKit。
 - 原生 x64 构建/UI 验收由 GitHub Windows runner 执行，浏览器 GPU 原生 x64 验收仍需对应硬件。
 
+- GitHub Actions Run 41319442298：ARM64/x64 原生构建、46 项测试、打包启动 smoke、公开附件校验及发布全部通过，v0.1.4 已公开。
+- 真实 electron-updater GitHub provider 分别下载两种架构 0.1.4 并通过 SHA-512。ARM64 独立目录从 0.1.2 静默在线更新到 0.1.4；SQLite 与数据标记保留，新版运行 smoke 通过。
+- 本机 x64 安装包在 ARM64 仿真运行退出，未视为兼容运行通过；x64 程序启动采用 GitHub 原生 x64 runner 的通过证据。浏览器 x64/GPU 的原生机器全量验收仍未完成。
+
 以下为历史版本证据。
 
 # 栖境 0.1.3 在线更新验收
