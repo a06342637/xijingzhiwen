@@ -44,5 +44,10 @@ export async function runSmoke({store,kernels,browsers,components,window,state}:
   await window.webContents.executeJavaScript(`document.querySelector('.selection-checkbox input').click()`);await wait();assert.ok(await window.webContents.executeJavaScript(`Boolean(document.querySelector('.selection-bar'))`));await window.webContents.executeJavaScript(`(()=>{const input=document.querySelector('input[aria-label="搜索环境"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'没有此环境-unique');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);await wait();assert.equal(await window.webContents.executeJavaScript(`Boolean(document.querySelector('.selection-bar'))`),false);checks.push({name:'取消 Cookie 文件选择不报成功 / 搜索移除隐藏批量选择',passed:true});
  }
  if(process.env.QIJING_SMOKE_FEATURES==='1'){const {featureSmoke}=await import('./features-smoke');checks.push(...await featureSmoke(window,output));}
+ if(process.env.QIJING_SMOKE_UPDATE_UI==='1'){
+  await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('.nav-item')).find(x=>x.textContent.includes('软件设置')).click()`);await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,200))');
+  assert.ok(await window.webContents.executeJavaScript(`document.body.innerText.includes('启动时自动检查并下载更新')`));await fs.writeFile(path.join(output,'software-update.png'),(await window.webContents.capturePage()).toPNG());
+  const toggle=()=>window.webContents.executeJavaScript(`document.querySelector('.update-preference input').click()`);await toggle();await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,200))');assert.equal(store.settings().automaticUpdates,false);await toggle();await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,200))');assert.equal(store.settings().automaticUpdates,true);checks.push({name:'在线更新面板与自动检查下载设置保存',passed:true});
+ }
  await fs.writeFile(path.join(output,'smoke.json'),JSON.stringify({createdAt:new Date().toISOString(),checks,state:await state()},null,2));await browsers.stopAll();store.close();
 }

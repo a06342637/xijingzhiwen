@@ -1,0 +1,73 @@
+name: Build and publish Windows release
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: windows-11-arm
+          - arch: x64
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node node_modules/electron/install.js
+      - run: npm run pack:${{ matrix.arch }}
+      - name: Run packaged desktop smoke
+        run: node scripts/packaged-smoke.mjs ${{ matrix.arch }}
+        env:
+          QIJING_SMOKE_BROWSER: '0'
+      - name: Prepare release directory
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          "RELEASE_DIR=$((Resolve-Path "../xijing发行版本/$version").Path)" >> $env:GITHUB_ENV
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.arch }}
+          path: ${{ env.RELEASE_DIR }}/Qijing-*.exe*
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: installers
+          merge-multiple: true
+      - name: Build verified update manifests
+        run: |
+          version=$(node -p "require('./package.json').version")
+          mkdir -p "../xijing发行版本/$version"
+          cp installers/* "../xijing发行版本/$version/"
+          node scripts/delivery.mjs
+      - name: Publish complete draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish.mjs
+
