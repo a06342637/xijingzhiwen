@@ -34,7 +34,7 @@ async function start(payload:any){
    const ready=(page:any)=>{const task=configure(page);pageReady.set(page,task);task.catch(e=>send({event:'notice',error:safeError(e)}));return task;};for(const page of context.pages())await ready(page);context.on('page',ready);
   }
  }
- context.on('close',()=>{send({event:'closed'});setTimeout(()=>process.exit(0),50);});
+ context.on('close',()=>{send({event:'closed'});setTimeout(()=>process.exit(0),250);});
  const attach=(page:any)=>page.on('download',async(download:any)=>{try{const directory=profile.downloadDir||payload.downloadDir;await fs.mkdir(directory,{recursive:true});const suggested=path.basename(download.suggestedFilename()).replace(/[<>:"/\\|?*\x00-\x1f]/g,'_');const {randomUUID}=await import('node:crypto');const target=path.join(directory,Date.now()+'-'+randomUUID().slice(0,8)+'-'+suggested);await download.saveAs(target);send({event:'download',filename:path.basename(target)});}catch(e){send({event:'notice',error:safeError(e)});}});
  context.pages().forEach(attach);context.on('page',attach);
  send({event:'started'});

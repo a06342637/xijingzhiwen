@@ -41,10 +41,10 @@ export class Browsers {
  private async terminate(id:string,r:Runner){
   const exited=new Promise<void>(resolve=>{if(r.child.exitCode!==null||r.child.signalCode!==null)resolve();else r.child.once('exit',()=>resolve());});
   if(r.child.exitCode===null&&r.child.signalCode===null)r.child.kill();
-  let timer:NodeJS.Timeout|undefined;try{await Promise.race([exited,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('浏览器尚未退出，保留环境锁')),5000);})]);}finally{if(timer)clearTimeout(timer);}
+  let timer:NodeJS.Timeout|undefined;try{await Promise.race([exited,new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('浏览器尚未退出，保留环境锁')),15000);})]);}finally{if(timer)clearTimeout(timer);}
   await r.release?.();this.dispose(id,r,new Error('环境已关闭'));
  }
- async stop(id:string){await this.starts.get(id)?.catch(()=>{});const r=this.runners.get(id);if(!r)return;r.status='stopping';this.changed();try{await this.rpc(r,'stop',{},10000);}catch{}finally{await this.terminate(id,r);}}
+ async stop(id:string){await this.starts.get(id)?.catch(()=>{});const r=this.runners.get(id);if(!r)return;r.status='stopping';this.changed();try{await this.rpc(r,'stop',{},30000);}catch{}finally{await this.terminate(id,r);}}
  async stopAll(){this.shutdown=true;try{await Promise.allSettled([...this.starts.values()]);await Promise.all([...this.runners.keys()].map(id=>this.stop(id)));}finally{this.shutdown=false;}}
  async focus(id:string){return this.rpc(await this.ready(id),'focus');}
  async proxyTest(proxy:ProxyConfig){if(this.shutdown)throw new Error('软件正在关闭');const id='_proxy-'+randomUUID();const r=this.create(id);try{return await this.rpc(r,'proxyTest',{proxy},20000);}finally{await this.terminate(id,r);}}
