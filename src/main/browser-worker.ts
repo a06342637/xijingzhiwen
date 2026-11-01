@@ -5,12 +5,12 @@ import {buildOptions,proxyUrl} from '../shared/config';
 import {PROBE} from './probe';
 import {launchFirefox} from './firefox';
 import {firefoxCookies} from './firefox-cookies';
-import {mobileUA} from '../shared/devices';
+import {mobileUA,mobileIdentity} from '../shared/devices';
 import {resolveProxyLocale} from './proxy-locale';
 let resolvedGeo:unknown;
 const pageReady=new WeakMap<object,Promise<void>>();
 let context:any,profile:any,kernel:any,initial:any;
-const send=(msg:unknown)=>process.send?.(msg);
+const send=(msg:unknown)=>{if(process.connected)process.send?.(msg,()=>{});};
 let secretValues:string[]=[];
 function safeError(error:unknown){let msg=error instanceof Error?error.message:String(error);for(const s of secretValues)if(s)msg=msg.split(s).join('[已隐藏]');return msg.slice(0,2500);}
 async function sdk(){return import('@xiaoxiaofeihh/chromix');}
@@ -30,7 +30,7 @@ async function start(payload:any){
  else if(profile.mode==='measured'){context=await lib.launchPersistentContext({userDataDir:payload.profileDir,headless:false,devicePool:{python:payload.python,host:profile.recordPath,records:[profile.recordPath],seed:profile.seed}} as any);}
  else {const options=buildOptions(profile,kernel.path,payload.profileDir,payload.extensions,payload.proxy);if(profile.values.deviceType!=='desktop')options.userAgent=mobileUA(profile.values,kernel.version);context=await lib.launchPersistentContext(options);
   if(profile.values.deviceType!=='desktop'){
-   const configure=async(page:any)=>{const session=await context.newCDPSession(page);try{await session.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:Number(profile.values.touch)});const android=profile.values.deviceType==='android';await session.send('Emulation.setUserAgentOverride',{userAgent:options.userAgent,platform:android?'Linux armv8l':profile.values.deviceType==='ipad'?'iPad':'iPhone',userAgentMetadata:{brands:android?[{brand:'Chromium',version:kernel.version.split('.')[0]}]:[],fullVersionList:android?[{brand:'Chromium',version:kernel.version}]:[],platform:android?'Android':'iOS',platformVersion:android?'14.0.0':'18.0.0',architecture:'',model:android?'Pixel 8':'',mobile:Math.min(Number(profile.values.screenWidth),Number(profile.values.screenHeight))<600,bitness:'',wow64:false}});}catch(error){await session.detach();throw error;}page.once('close',()=>void session.detach().catch(()=>{}));};
+   const configure=async(page:any)=>{const session=await context.newCDPSession(page);try{await session.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:Number(profile.values.touch)});const identity=mobileIdentity(profile.values,kernel.version);await session.send('Emulation.setDeviceMetricsOverride',identity.metrics);const {metrics,...ua}=identity;await session.send('Emulation.setUserAgentOverride',ua);}catch(error){await session.detach();throw error;}page.once('close',()=>void session.detach().catch(()=>{}));};
    const ready=(page:any)=>{const task=configure(page);pageReady.set(page,task);task.catch(e=>send({event:'notice',error:safeError(e)}));return task;};for(const page of context.pages())await ready(page);context.on('page',ready);
   }
  }
@@ -42,7 +42,7 @@ async function start(payload:any){
 }
 async function request(action:string,payload:any){
  if(action==='start'){await start(payload);return true;}
- if(action==='stop'){await context?.close();return true;}
+ if(action==='stop'){await context?.close();setTimeout(()=>process.exit(0),500).unref();return true;}
  if(action==='focus'){const page=context?.pages()[0];if(page)await page.bringToFront();return true;}
  if(action==='diagnose')return diagnostic();
  if(action==='exportCookies'||action==='importCookies'){if(profile.values.engine==='firefox')return firefoxCookies(context,action,payload.path,payload.passphrase);const lib=await sdk();return action==='exportCookies'?lib.exportCookies(context,payload.path,{passphrase:payload.passphrase}):lib.importCookies(context,payload.path,{passphrase:payload.passphrase});}

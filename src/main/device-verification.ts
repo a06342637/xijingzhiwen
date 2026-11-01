@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {newProfile} from '../shared/model';
-import {applyDevice} from '../shared/devices';
+import {applyDevice,DEVICES,mobileIdentity} from '../shared/devices';
 import {Store} from './store';
 import {Kernels} from './kernels';
 import {Browsers} from './browsers';
@@ -13,9 +13,10 @@ export async function verifyDevices(store:Store,kernels:Kernels,browsers:Browser
   const p=newProfile(randomUUID(),'1111',chromium.id);p.name='Chromium 身份验收 '+platform;p.values.platform=platform;store.put('profile',p.id,p);
   try{const report=await browsers.diagnose(p.id);const o=(report.observations as any).observation;assert.equal(o.identity.ch.platform,({windows:'Windows',macos:'macOS',linux:'Linux'} as any)[platform]);assert.ok(o.identity.ua.includes('Chrome/'));results.push({name:p.name,passed:true,observation:o});}finally{await browsers.stop(p.id);store.remove('profile',p.id);}
  }
- for(const id of ['iphone-15','ipad-air','pixel']){
-  const p=newProfile(randomUUID(),'1111',chromium.id);p.name='布局验收 '+id;p.values=applyDevice(p.values,id);store.put('profile',p.id,p);
-  try{const report=await browsers.diagnose(p.id);const o=(report.observations as any).observation;assert.equal(o.screen.width,p.values.screenWidth);assert.equal(o.screen.height,p.values.screenHeight);assert.equal(o.screen.dpr,Number(p.values.deviceScale));assert.equal(o.screen.touch,5);assert.equal(o.screen.innerWidth,p.values.viewportWidth);assert.equal(o.screen.innerHeight,p.values.viewportHeight);assert.equal(o.preferences['(pointer: coarse)'],true);assert.equal(o.preferences['(hover: hover)'],false);results.push({name:p.name,passed:true,observation:o});}finally{await browsers.stop(p.id);store.remove('profile',p.id);}
+ const matrix=process.env.QIJING_SMOKE_DEVICE_MATRIX==='1';
+ for(const id of matrix?DEVICES.map(d=>d.id):['iphone-15','ipad-air','pixel'])for(const landscape of matrix?[false,true]:[false]){
+  const p=newProfile(randomUUID(),'1111',chromium.id);p.name='布局验收 '+id+(landscape?' 横屏':' 竖屏');p.values=applyDevice(p.values,id,landscape);store.put('profile',p.id,p);
+  try{const report=await browsers.diagnose(p.id);const o=(report.observations as any).observation,identity=mobileIdentity(p.values,chromium.version);assert.equal(o.screen.width,p.values.screenWidth);assert.equal(o.screen.height,p.values.screenHeight);assert.equal(o.screen.dpr,Number(p.values.deviceScale));assert.equal(o.screen.touch,5);assert.equal(o.screen.innerWidth,p.values.viewportWidth);assert.equal(o.screen.innerHeight,p.values.viewportHeight);assert.equal(o.screen.orientation.type,landscape?'landscape-primary':'portrait-primary');assert.equal(o.screen.orientation.angle,identity.metrics.screenOrientation.angle);assert.equal(o.identity.ua,identity.userAgent);assert.equal(o.identity.ch.platform,identity.userAgentMetadata.platform);assert.equal(o.identity.ch.model,identity.userAgentMetadata.model);assert.equal(o.preferences['(pointer: coarse)'],true);assert.equal(o.preferences['(hover: hover)'],false);results.push({name:p.name,passed:true,observation:o});await fs.writeFile(path.join(output,'devices-real.json'),JSON.stringify(results,null,2));}finally{await browsers.stop(p.id);store.remove('profile',p.id);}
  }
  const firefox=store.kernels().find(k=>k.engine==='firefox')||await kernels.installFirefox();
  for(const platform of ['windows','macos','linux']){

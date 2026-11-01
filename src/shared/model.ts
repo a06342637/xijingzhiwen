@@ -35,6 +35,7 @@ function feature(key:string,label:string,group:string,kind:Feature['kind'],value
 export const FEATURES:Feature[]=[
  feature('engine','浏览器引擎','身份 / User-Agent','select','chromium',undefined,'火狐使用 Camoufox 测试版；Windows ARM64 通过 x64 兼容运行。',{options:['chromium','firefox'],source:'https://github.com/daijro/camoufox'}),
  feature('deviceType','环境类型','身份 / User-Agent','select','desktop',undefined,'移动端使用 Chromium 布局模拟，不是真实 Safari、iOS 或安卓系统。',{options:['desktop','iphone','ipad','android'],status:'limited'}),
+ feature('deviceModel','安卓型号展示','身份 / User-Agent','text','',undefined,'安卓 UA 与 Client Hints 使用相同型号；预设自动填写，只是展示值。',{status:'limited'}),
  feature('deviceScale','设备像素比 DPR','硬件 / 屏幕','select','1',undefined,'屏幕尺寸使用 CSS/DIP 单位，物理像素约为尺寸乘 DPR。桌面固定视口时生效。',{options:['1','1.25','1.5','2','2.625','3','3.5','4'],status:'limited'}),
  feature('identityMode','身份模式','身份 / User-Agent','select','seeded',undefined,'原生对照关闭身份覆盖；语言与时区仍可显式设置。',{options:['seeded','off']}),
  feature('platform','系统展示','身份 / User-Agent','select','windows','fingerprint-platform','不会更换真实操作系统。',{options:['windows','macos','linux']}),

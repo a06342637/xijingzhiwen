@@ -27,14 +27,26 @@ export function applyScreen(v:Values,width:number,height:number):Values {
 export function applyDevice(v:Values,id:string,landscape=false):Values {
  const d=DEVICES.find(x=>x.id===id);if(!d)throw new Error('设备预设不存在');
  const width=landscape?d.height:d.width,height=landscape?d.width:d.height;v={...v};const defaults=defaultValues();for(const key of Object.keys(v))if(!fieldSupported(key,{...v,engine:'chromium',deviceType:d.type}))v[key]=defaults[key];
- return {...applyScreen({...v,engine:'chromium',deviceType:d.type},width,height),deviceScale:String(d.dpr),viewportMode:'fixed',touch:5,pointer:'coarse',hover:'none',brand:'Chrome',brandVersion:'',platformVersion:'',userAgent:'',identityMode:'seeded',pixelNoise:'native',audioRender:'native',audioSeed:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:'',fontPolicy:'native',fontWhitelist:'',windowsFontMetrics:false};
+ const models:Record<string,string>={pixel:'Pixel 8',galaxy:'SM-S921B','android-large':'Android Phone','android-tablet':'Android Tablet'};
+ return {...applyScreen({...v,engine:'chromium',deviceType:d.type},width,height),deviceModel:models[d.id]||'',deviceScale:String(d.dpr),viewportMode:'fixed',touch:5,pointer:'coarse',hover:'none',brand:'Chrome',brandVersion:'',platformVersion:'',userAgent:'',identityMode:'seeded',pixelNoise:'native',audioRender:'native',audioSeed:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:'',fontPolicy:'native',fontWhitelist:'',windowsFontMetrics:false};
 }
 const firefoxKeys=new Set(['engine','deviceType','deviceScale','platform','brand','brandVersion','userAgent','locale','timezone','geoip','webrtcMode','webrtcIp','webrtcPolicy','gpuBackend','gpuVendor','gpuRenderer','cpu','screenWidth','screenHeight','taskbarHeight','windowWidth','windowHeight','viewportMode','viewportWidth','viewportHeight','touch','colorScheme','forcedColors','reduced-motion','fontPolicy','fontWhitelist','thirdPartyCookies']);
-const mobileKeys=new Set(['engine','deviceType','deviceScale','userAgent','locale','timezone','geoip','webrtcPolicy','screenWidth','screenHeight','windowWidth','windowHeight','viewportWidth','viewportHeight','touch','colorScheme','forcedColors','reduced-motion','thirdPartyCookies']);
+const mobileKeys=new Set(['engine','deviceType','deviceModel','deviceScale','userAgent','locale','timezone','geoip','webrtcPolicy','screenWidth','screenHeight','windowWidth','windowHeight','viewportWidth','viewportHeight','touch','colorScheme','forcedColors','reduced-motion','thirdPartyCookies']);
 export function fieldSupported(key:string,v:Values){return v.engine==='firefox'?firefoxKeys.has(key):v.deviceType&&v.deviceType!=='desktop'?mobileKeys.has(key):true;}
 export function mobileUA(v:Values,version:string){
  if(v.userAgent)return String(v.userAgent);
- if(v.deviceType==='android')return `Mozilla/5.0 (Linux; Android 14; ${Math.min(Number(v.screenWidth),Number(v.screenHeight))>=600?'Tablet':'Pixel 8'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${version} ${Math.min(Number(v.screenWidth),Number(v.screenHeight))>=600?'':'Mobile '}Safari/537.36`;
+ if(v.deviceType==='android')return `Mozilla/5.0 (Linux; Android 14; ${v.deviceModel||'Pixel 8'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${version} ${Math.min(Number(v.screenWidth),Number(v.screenHeight))>=600?'':'Mobile '}Safari/537.36`;
  if(v.deviceType==='iphone')return 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
  return 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 }
+export function mobileIdentity(v:Values,version:string){
+ const android=v.deviceType==='android',landscape=Number(v.screenWidth)>Number(v.screenHeight);
+ return {userAgent:mobileUA(v,version),platform:android?'Linux armv8l':v.deviceType==='ipad'?'iPad':'iPhone',userAgentMetadata:{brands:android?[{brand:'Chromium',version:version.split('.')[0]}]:[],fullVersionList:android?[{brand:'Chromium',version}]:[],platform:android?'Android':'iOS',platformVersion:android?'14.0.0':'18.0.0',architecture:'',model:android?String(v.deviceModel||'Pixel 8'):'',mobile:v.deviceType==='iphone'||Math.min(Number(v.screenWidth),Number(v.screenHeight))<600,bitness:'',wow64:false},metrics:{width:Number(v.viewportWidth),height:Number(v.viewportHeight),screenWidth:Number(v.screenWidth),screenHeight:Number(v.screenHeight),deviceScaleFactor:Number(v.deviceScale),mobile:true,screenOrientation:{type:landscape?'landscapePrimary':'portraitPrimary',angle:landscape?90:0}}};
+}
+export function applyDesktop(v:Values,platform:string):Values{
+ return {...v,deviceType:'desktop',deviceModel:'',platform,platformVersion:'',userAgent:'',deviceScale:'1',viewportMode:'native',touch:0,pointer:'fine',hover:'hover',screenWidth:1920,screenHeight:1080,taskbarHeight:48,windowWidth:1280,windowHeight:860,viewportWidth:1280,viewportHeight:720};
+}
+export function devicePreset(v:Values){
+ return DEVICES.find(d=>d.type===v.deviceType&&Number(v.deviceScale)===d.dpr&&((d.width===v.screenWidth&&d.height===v.screenHeight)||(d.width===v.screenHeight&&d.height===v.screenWidth)))?.id||'';
+}
+export function environmentLabel(v:Values){return ({iphone:'iPhone · 模拟',ipad:'iPad · 模拟',android:'Android · 模拟'} as Record<string,string>)[String(v.deviceType)]||({windows:'Windows',macos:'macOS',linux:'Linux'} as Record<string,string>)[String(v.platform)]||String(v.platform);}

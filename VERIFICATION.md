@@ -1,3 +1,16 @@
+# 栖境 0.1.5 错误修复与指纹复查
+
+日期：2026-11-02，Windows ARM64；Firefox x64 兼容运行。
+
+- 用户截图堆栈位于 scripts/updater-smoke.cjs 与 electron-updater 控制台日志，错误为终端管道断开后的 EPIPE。检查未发现遗留测试进程，不修改系统设置或正常用户环境数据。
+- 用真实 Electron 更新验证进程、主动关闭 stdout/stderr 管道复现条件；修复后正常检查下载并退出 0，无弹窗，日志落入文件。正式软件采用文件 updater logger 与 EPIPE stream 防护；其他 stream 错误仍向上报告。
+- 52 项测试、TypeScript 与生产构建通过，新增断管道、横竖屏、型号、策略重置及配置迁移检查。
+- 全量设备矩阵：13 组设备各自横屏/竖屏共 26 项，加上 Chromium 与 Firefox 的 Windows/macOS/Linux 预设共 6 项，32 项真实窗口检查通过。对比屏幕、视口、DPR、触摸、orientation、UA、Client Hints 与安卓型号；火狐重启身份复查通过。
+- 界面验收：横屏默认预设打开仍为横屏、选中正确尺寸；设备类型切换保留方向，切到火狐清除移动参数；不支持的目录按钮禁用。Cookie/localStorage、下载、扩展、HTTP 代理认证与 IPC 保存回归通过。
+- 本轮没有重新宣称所有网站/所有 GPU 或完整真机指纹通过。移动环境仍是 Chromium 模拟；火狐不支持的种子图形/音频覆盖保留限制。代理供应商轮换与跨区 DNS 限制继续适用。
+
+以下为历史版本证据。
+
 # 栖境 0.1.4 引擎 / 设备 / 代理验收
 
 日期：2026-11-01，Windows ARM64 机器；Firefox x64 兼容运行。

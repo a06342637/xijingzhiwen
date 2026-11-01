@@ -9,13 +9,15 @@ const {ElectronHttpExecutor}=require('electron-updater/out/electronHttpExecutor'
 const version=require('../package.json').version;
 const root=path.resolve('.verification/update-install-'+version);
 const installDir=path.join(root,'installed'),data=path.join(root,'data');
+const {createFileLogger,guardOutputPipes}=require('./file-log.cjs');
+const logger=createFileLogger(path.join(root,'updater.log'));guardOutputPipes(logger);
 app.setPath('userData',path.join(root,'driver'));
 function execute(file,args,env=process.env){return new Promise((resolve,reject)=>{const child=spawn(file,args,{env,windowsHide:true,stdio:'ignore'});child.on('error',reject);child.on('close',code=>code?reject(new Error(path.basename(file)+' exited '+code)):resolve());});}
 app.whenReady().then(async()=>{
  await fs.mkdir(root,{recursive:true});await fs.mkdir(data,{recursive:true});
  const cached=path.resolve('.verification/github-update/arm64');
  const adapter={version:'0.1.2',name:'qijing-update-test',isPackaged:true,appUpdateConfigPath:path.join(cached,'app-update.yml'),userDataPath:cached,baseCachePath:cached,whenReady:()=>Promise.resolve(),relaunch(){},quit(){this.didQuit=true;},onQuit(){}};
- const updater=new NsisUpdater(null,adapter);updater.httpExecutor=new ElectronHttpExecutor();updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.disableDifferentialDownload=true;updater.disableWebInstaller=true;
+ const updater=new NsisUpdater(null,adapter);updater.logger=logger;updater.httpExecutor=new ElectronHttpExecutor();updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.disableDifferentialDownload=true;updater.disableWebInstaller=true;
  updater.setFeedURL({provider:'github',owner:'a06342637',repo:'xijingzhiwen',channel:'latest-arm64'});updater.installDirectory=installDir;
  let updaterError;updater.on('error',error=>{updaterError=error;});
  const result=await updater.checkForUpdates();if(result.updateInfo.version!==version)throw new Error('Published version differs from source');
@@ -39,5 +41,5 @@ app.whenReady().then(async()=>{
  const output=path.join(root,'updated');await execute(executable,[],{...smokeEnv,QIJING_SMOKE_OUTPUT:output});
  const state=JSON.parse(await fs.readFile(path.join(output,'smoke.json'),'utf8'));if(state.state.version!==version||!state.checks.every(c=>c.passed))throw new Error('Updated program failed its isolated runtime check');
  if(await fs.readFile(path.join(data,'update-sentinel'),'utf8')!=='preserve-this')throw new Error('Update removed data');
- await fs.writeFile(path.join(root,'result.json'),JSON.stringify({version,githubDownload:true,sha512Verified:true,quitAndInstall:true,silentInstallation:true,dataPreserved:true,updatedRuntime:true,automaticRestartArgument:'Covered by SoftwareUpdates unit tests; this harness reopens with isolated environment variables.',checks:state.checks},null,2));console.log('GitHub download, updater installation, data retention and updated runtime passed: '+version);app.exit(0);
-}).catch(error=>{console.error(error);app.exit(1);});
+ await fs.writeFile(path.join(root,'result.json'),JSON.stringify({version,githubDownload:true,sha512Verified:true,quitAndInstall:true,silentInstallation:true,dataPreserved:true,updatedRuntime:true,automaticRestartArgument:'Covered by SoftwareUpdates unit tests; this harness reopens with isolated environment variables.',checks:state.checks},null,2));logger.info('GitHub download, updater installation, data retention and updated runtime passed: '+version);app.exit(0);
+}).catch(error=>{logger.error(error);app.exit(1);});

@@ -1,6 +1,7 @@
 import {app,BrowserWindow,ipcMain,safeStorage,dialog,shell,nativeTheme} from 'electron';
 import {autoUpdater as updateLifecycle} from 'electron';
 import {autoUpdater} from 'electron-updater';
+import {fileLogger,guardOutputPipes} from './file-log';
 import {SoftwareUpdates} from './software-update';
 import {validateSettingsPatch} from './settings';
 import {prepareProfileBatch} from './profile-batch';
@@ -26,6 +27,8 @@ const devDir=path.resolve(__dirname,'..');
 const resources=app.isPackaged?process.resourcesPath:path.join(devDir,'vendor-resources');
 const dataOverride=process.env.QIJING_TEST_DATA;if(dataOverride&&!process.env.QIJING_SMOKE)throw new Error('数据目录覆盖仅用于自检');
 if(dataOverride)app.setPath('userData',path.resolve(dataOverride));
+const updateLogger=fileLogger(path.join(app.getPath('userData'),'logs','software-update.log'));
+guardOutputPipes(updateLogger);autoUpdater.logger=updateLogger;
 if(!app.requestSingleInstanceLock())app.quit();else {
  app.on('second-instance',()=>{window?.restore();window?.focus();});
  void app.whenReady().then(initialize).catch(async error=>{await dialog.showMessageBox({type:'error',title:'栖境启动失败',message:String(error)});app.quit();});

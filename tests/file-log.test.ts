@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {spawn} from 'node:child_process';
+import {fileLogger,guardOutputPipes} from '../src/main/file-log';
+import {EventEmitter} from 'node:events';
+test('closed output pipe is handled while unrelated stream errors remain visible',()=>{const warnings:string[]=[];const logger={info(){},debug(){},error(){},warn:(...args:unknown[])=>{warnings.push(String(args[0]));}};const stream=new EventEmitter();guardOutputPipes(logger,[stream as any]);assert.doesNotThrow(()=>stream.emit('error',Object.assign(new Error('closed'),{code:'EPIPE'})));assert.equal(warnings.length,1);assert.throws(()=>stream.emit('error',Object.assign(new Error('real failure'),{code:'EIO'})),/real failure/);});
+test('file logging works without a console and a missing log destination cannot abort an update',async()=>{const dir=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-log-'));try{const file=path.join(dir,'logs','update.log');const logger=fileLogger(file);logger.info('download %s','verified');assert.match(await fs.readFile(file,'utf8'),/download verified/);const invalid=fileLogger(path.join(file,'not-a-directory'));assert.doesNotThrow(()=>invalid.info('ignored filesystem error'));}finally{await fs.rm(dir,{recursive:true,force:true});}});
+test('helper survives a real broken stdout pipe and continues writing its file report',async()=>{const dir=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-pipe-'));try{const file=path.join(dir,'test.log');const code="const {createFileLogger,guardOutputPipes}=require('./scripts/file-log.cjs');const log=createFileLogger(process.argv[1]);guardOutputPipes(log);setTimeout(()=>{process.stdout.write('after parent closes pipe');setTimeout(()=>{log.info('survived');process.exit(0)},100)},100);";const child=spawn(process.execPath,['-e',code,file],{stdio:['ignore','pipe','pipe'],windowsHide:true});child.stdout!.destroy();const exit=await new Promise<number|null>((resolve,reject)=>{child.once('error',reject);child.once('exit',resolve);});assert.equal(exit,0);assert.match(await fs.readFile(file,'utf8'),/survived/);}finally{await fs.rm(dir,{recursive:true,force:true});}});

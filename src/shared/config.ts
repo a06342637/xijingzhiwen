@@ -3,7 +3,8 @@ import path from 'node:path';
 import { FEATURES, profileSchema, type Profile, type ProxyConfig } from './model';
 import {fieldSupported} from './devices';
 export function validateProfile(raw:unknown):Profile {
- const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',...p.values};const v=p.values;
+ const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',deviceModel:'',...p.values};const v=p.values;
+ if(v.deviceModel&&(!/^[a-zA-Z0-9 ._+-]{1,80}$/.test(String(v.deviceModel))||v.deviceType!=='android'))throw new Error('型号仅用于安卓，支持最多 80 个英文、数字、空格和 ._+- 字符');
  if(v.engine==='firefox'){
   if(p.mode==='measured'||v.deviceType!=='desktop')throw new Error('火狐目前只支持自定义电脑环境');
   if(v.brandVersion&&!/^[1-9]\d*$/.test(String(v.brandVersion)))throw new Error('火狐品牌版本目前只支持主版本整数，例如 158');
@@ -13,6 +14,7 @@ export function validateProfile(raw:unknown):Profile {
  }else if(v.brand==='Firefox')throw new Error('Firefox 品牌需要火狐内核');
  if(v.deviceType!=='desktop'){
   if(p.mode==='measured'||v.viewportMode!=='fixed'||Number(v.touch)<1||v.pointer!=='coarse'||v.hover!=='none')throw new Error('移动端模拟需要固定视口、触摸点、粗略指针与无悬停');
+  if(Number(v.taskbarHeight)!==0)throw new Error('移动端模拟工作区保留高度必须为 0');
   if(v.identityMode==='off'||v.pixelNoise!=='native'||v.audioRender!=='native'||v.gpuVendor||v.fontPolicy!=='native'||v.synthetic)throw new Error('移动端布局模拟不能混入电脑图形、字体或实测身份覆盖');
   for(const f of FEATURES)if(!fieldSupported(f.key,v)&&!['platform','brand','taskbarHeight','viewportMode','pointer','hover'].includes(f.key)&&v[f.key]!==f.default)throw new Error('移动端布局模拟不支持覆盖：'+f.label);
  }
@@ -46,7 +48,7 @@ export function validateProfile(raw:unknown):Profile {
 }
 export function proxyUrl(p:ProxyConfig){if(/[\s\x00-\x1f\/\\@?#]/.test(p.host)||(!isIP(p.host)&&!/^\.?[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.?$/i.test(p.host)))throw new Error('代理主机只填写有效域名或 IP');for(const value of [p.username,p.password])if(value&&/[\x00-\x1f\x7f]/.test(value))throw new Error('代理凭据含无效控制字符');if(p.protocol==='socks5'&&(p.username||p.password)&&(!p.username||!p.password||Buffer.byteLength(p.username)>255||Buffer.byteLength(p.password)>255))throw new Error('SOCKS5 认证需要 1–255 字节的用户名和密码');const host=isIP(p.host)===6?'['+p.host+']':p.host;return `${p.protocol}://${host}:${p.port}`;}
 export function buildOptions(p:Profile,binary:string,profileDir:string,extensions:string[],proxy?:ProxyConfig){
- validateProfile(p);if(p.mode==='measured')throw new Error('实测模式必须通过专用设备入口启动');
+ p=validateProfile(p);if(p.mode==='measured')throw new Error('实测模式必须通过专用设备入口启动');
  if(p.values.engine==='firefox')throw new Error('火狐必须通过专用内核入口启动');
  const v=p.values,args:string[]=[`--fingerprint=${v.identityMode==='off'?'off':p.seed}`];
  const nativeExclusions=new Set(['platform','brand','brandVersion','platformVersion','gpuBackend','gpuVendor','gpuRenderer','cpu','memory','screenWidth','screenHeight','taskbarHeight','quota','touch','pointer','hover','fontPolicy','fontWhitelist','audioRender','audioSeed']);

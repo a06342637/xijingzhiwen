@@ -4,7 +4,7 @@ Windows 多环境浏览器管理软件。管理界面使用 Electron / React / T
 
 ## 使用
 
-1. 安装对应架构的 `Qijing-0.1.4-arm64-Setup.exe` 或 `Qijing-0.1.4-x64-Setup.exe`。
+1. 安装对应架构的 `Qijing-0.1.5-arm64-Setup.exe` 或 `Qijing-0.1.5-x64-Setup.exe`。
 2. 在“内核管理”下载或导入 Chromix。候选基线为 `155.0.8059.79`，下载验证 SHA-256、PE 架构和许可证目录。
 3. 点击“新建环境”，选择内核、代理及高级配置，保存后启动。登录、浏览、下载由用户自己操作。
 4. 菜单中可复制配置、归档、打开下载目录、迁移加密 Cookie、检查环境。复制配置生成新种子，不复制登录数据。
@@ -80,3 +80,9 @@ npm run pack
 - 代理粘贴默认自动识别 hostname:port:username:password，密码用 Windows 加密保存。代理启用时限制非代理 UDP，禁用 QUIC，并限制 Chromium 本地目的域名解析；火狐启用远端 SOCKS DNS、禁用预取和直连回退。本地诊断地址走回环。绕过规则和主动选择原生 WebRTC 策略会放宽路由限制。
 - Firefox 不接入 Chromium 的固定种子 Canvas、音频隔离、实测设备和扩展目录；现版原生音频，固定配置重启保持。Cookie 加密迁移支持同引擎，含 Chromium 专属元数据的文件不能直接导入火狐。
 - QIJING_SMOKE_DEVICES=1 检查移动端视口/DPR/触摸与三种 Firefox 电脑身份、重启稳定性。
+
+## 0.1.5 维护检查
+
+更新日志保存到数据目录 logs/software-update.log，不再依赖终端。更新验证脚本日志保存于 .verification/github-update/updater.log。关闭终端后验证脚本不会因 EPIPE 弹窗。
+
+安卓型号在 UA 和 Client Hints 中一致，横屏/竖屏通过原生屏幕方向参数配置，编辑已有预设使用保存的方向。QIJING_SMOKE_DEVICE_MATRIX=1 与 QIJING_SMOKE_DEVICES=1 组合执行全部 13 组移动设备的横竖屏实测；QIJING_SMOKE_DEVICE_UI=1 检查预设显示与禁用控件。
