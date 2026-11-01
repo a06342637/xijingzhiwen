@@ -30,8 +30,8 @@ export async function featureSmoke(window:BrowserWindow,output:string){
  assert.equal(await js("document.querySelector('.inline-proxy input[type=password]').value"),'sample-secret-JP');
  await click('随机指纹');await screenshot('batch-random-proxy.png');
  await click('创建 3 个环境');
- for(let i=0;i<20;i++){state=await js<AppState>("window.qijing.invoke('state')");if(state.profiles.filter(p=>p.name.startsWith('批量随机验收 ')).length===3)break;await wait();}
- const created=state.profiles.filter(p=>p.name.startsWith('批量随机验收 '));assert.equal(created.length,3);assert.equal(new Set(created.map(p=>p.seed)).size,3);assert.equal(new Set(created.map(p=>JSON.stringify(p.values))).size,3);assert.ok(created.every(p=>p.proxyId&&p.values.locale==='ja-JP'&&p.values.fakeShadowRoot===true));assert.equal(state.proxies.find(p=>p.id===created[0].proxyId)?.hasPassword,true);assert.equal(state.proxies.find(p=>p.id===created[0].proxyId)?.password,undefined);
+ for(let i=0;i<20;i++){state=await js<AppState>("window.qijing.invoke('state')");if(state.profiles.filter(p=>p.name.startsWith('批量随机验收 ')&&!before.profiles.some(old=>old.id===p.id)).length===3)break;await wait();}
+ const created=state.profiles.filter(p=>p.name.startsWith('批量随机验收 ')&&!before.profiles.some(old=>old.id===p.id));assert.equal(created.length,3);assert.equal(new Set(created.map(p=>p.seed)).size,3);assert.equal(new Set(created.map(p=>JSON.stringify(p.values))).size,3);assert.ok(created.every(p=>p.proxyId&&p.values.locale==='ja-JP'&&p.values.fakeShadowRoot===true));assert.equal(state.proxies.find(p=>p.id===created[0].proxyId)?.hasPassword,true);assert.equal(state.proxies.find(p=>p.id===created[0].proxyId)?.password,undefined);
  await screenshot('batch-created.png');
  // Keep smoke fixtures isolated and restore defaults for the existing browser checks.
  for(const p of created){const clean={...p,proxyId:'',values:defaultValues()};await js(`window.qijing.invoke('profile.save',${JSON.stringify(clean)})`);}

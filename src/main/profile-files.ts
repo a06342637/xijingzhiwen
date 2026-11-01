@@ -8,7 +8,8 @@ export async function acquireProfileLock(directory:string){
  for(let attempt=0;attempt<2;attempt++){
   let handle,created=false;
   try{handle=await fs.open(file,'wx');created=true;await handle.writeFile(JSON.stringify({pid:process.pid,token}));await handle.sync();await handle.close();handle=undefined;
-   return async()=>{try{const owner=JSON.parse(await fs.readFile(file,'utf8'));if(owner.token===token)await fs.unlink(file);}catch(error:any){if(error.code!=='ENOENT')throw error;}};
+   let releasing:Promise<void>|undefined;
+   return ()=>releasing??=(async()=>{for(let retry=0;;retry++){try{const owner=JSON.parse(await fs.readFile(file,'utf8'));if(owner.token===token)await fs.unlink(file);return;}catch(error:any){if(error.code==='ENOENT')return;if(!['EPERM','EACCES','EBUSY'].includes(error.code)||retry>=6)throw error;await new Promise(r=>setTimeout(r,100*(retry+1)));}}})().catch(error=>{releasing=undefined;throw error;});
   }catch(error:any){await handle?.close().catch(()=>{});if(created){await fs.unlink(file).catch(()=>{});throw error;}if(error.code!=='EEXIST')throw error;
    let old:any;try{old=JSON.parse(await fs.readFile(file,'utf8'));}catch{throw new Error('环境锁损坏，无法确认是否仍被占用');}
    if(!Number.isSafeInteger(old.pid)||old.pid<=0)throw new Error('环境锁的进程信息无效');

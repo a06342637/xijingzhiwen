@@ -1,6 +1,6 @@
 {
   "name": "qijing",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "栖境 · Windows 多环境浏览器管理软件",
   "author": "Qijing contributors",
@@ -22,6 +22,7 @@
     "electron-updater": "^6.8.11",
     "lucide-react": "^0.577.0",
     "playwright-core": "1.64.1",
+    "playwright-firefox-driver": "npm:playwright-core@1.62.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "sql.js": "1.15.2",
@@ -69,7 +70,8 @@
     ],
     "asarUnpack": [
       "node_modules/sql.js/dist/sql-wasm.wasm",
-      "node_modules/playwright-core/**/*"
+      "node_modules/playwright-core/**/*",
+      "node_modules/playwright-firefox-driver/**/*"
     ],
     "win": {
       "target": "nsis",

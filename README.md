@@ -1,10 +1,10 @@
 # 栖境 Qijing
 
-Windows 多环境浏览器管理软件。管理界面使用 Electron / React / TypeScript，网页使用独立的 Chromix 浏览器。支持 Windows ARM64 和 x64。
+Windows 多环境浏览器管理软件。管理界面使用 Electron / React / TypeScript，网页使用独立的 Chromix 或 Firefox / Camoufox 浏览器。支持 Windows ARM64 和 x64。
 
 ## 使用
 
-1. 安装对应架构的 `Qijing-0.1.3-arm64-Setup.exe` 或 `Qijing-0.1.3-x64-Setup.exe`。
+1. 安装对应架构的 `Qijing-0.1.4-arm64-Setup.exe` 或 `Qijing-0.1.4-x64-Setup.exe`。
 2. 在“内核管理”下载或导入 Chromix。候选基线为 `155.0.8059.79`，下载验证 SHA-256、PE 架构和许可证目录。
 3. 点击“新建环境”，选择内核、代理及高级配置，保存后启动。登录、浏览、下载由用户自己操作。
 4. 菜单中可复制配置、归档、打开下载目录、迁移加密 Cookie、检查环境。复制配置生成新种子，不复制登录数据。
@@ -52,7 +52,7 @@ npm run pack
 
 ## 默认指纹与创建
 
-在软件设置中配置高级指纹与实验预设并保存，新建环境自动继承，已有环境不改变。新建支持 1–100 个环境，自动添加名称序号并生成独立种子与目录。一键随机会组合兼容的 Windows 硬件、屏幕、浏览器展示参数，并保留代理、语言、时区和实验选择；批量时可勾选每个环境分别随机。
+在软件设置中配置高级指纹与实验预设并保存，新建环境自动继承，已有环境不改变。新建支持 1–100 个环境，自动添加名称序号并生成独立种子与目录。一键随机会组合兼容的所选电脑系统硬件、屏幕、浏览器展示参数，并保留代理、语言、时区和实验选择；批量时可勾选每个环境分别随机。
 
 网络代理支持选择已保存节点、手动填写，或粘贴 `主机:端口:用户名:密码` 等五种格式（也支持 HTTP/HTTPS/SOCKS5 URL）。存在歧义时选择具体格式再解析。保存后凭据使用 Windows 加密保管。
 
@@ -69,3 +69,14 @@ npm run pack
 源码和 Releases 固定使用 https://github.com/a06342637/xijingzhiwen 。更新不会自动替换 Chromix 内核。
 
 后续版本：修改 `package.json` / `package-lock.json` 版本与 `scripts/release-notes.md`，提交并推送 main，再推送相同版本标签 `vX.Y.Z`（或手动运行 Build and publish Windows release）。GitHub Actions 在两种架构运行测试、构建、打包检查；附件完整且 SHA-256/SHA-512 正确后公开 Release。已公开版本不覆盖，修复使用新版本号。
+
+## 0.1.4 引擎和设备环境
+
+- Firefox 使用 Camoufox 158.0.1-beta.41（测试版），Windows 仅提供 x64 内核；ARM64 电脑通过 x64 兼容运行。内核按需下载，发行包约 1.32 GB，不进入软件安装包。支持原生 UA、系统展示、CPU、屏幕、语言、时区、WebRTC 地址及 WebGL 名称接入，实际能力见环境诊断。
+- Windows、macOS、Linux 是当前 Windows 软件中的电脑身份预设，不提供 macOS/Linux 安装包。
+- iPhone、iPad、Android 手机和平板为 Chromium 布局模拟，包含 CSS 屏幕尺寸、DPR、方向、视口、触摸和 UA；不是 Safari/WebKit 或真实移动系统，不能承诺真机指纹。
+- 电脑屏幕包含 1366×768 至 5120×2880、2K、4K、5K、超宽屏；移动设备提供 13 组尺寸样本，并可在高级配置自定义。尺寸为 CSS/DIP 单位。
+- 新环境默认开启代理出口匹配语言与时区；按实际出口覆盖手动值。直连不查询。关闭开关后使用手动设置；已有环境配置保留，旧软件默认预设的代理匹配开关迁移为开启。轮换代理会在不同连接换城市，启动时匹配无法保证后续时区一致，建议供应商提供固定会话。
+- 代理粘贴默认自动识别 hostname:port:username:password，密码用 Windows 加密保存。代理启用时限制非代理 UDP，禁用 QUIC，并限制 Chromium 本地目的域名解析；火狐启用远端 SOCKS DNS、禁用预取和直连回退。本地诊断地址走回环。绕过规则和主动选择原生 WebRTC 策略会放宽路由限制。
+- Firefox 不接入 Chromium 的固定种子 Canvas、音频隔离、实测设备和扩展目录；现版原生音频，固定配置重启保持。Cookie 加密迁移支持同引擎，含 Chromium 专属元数据的文件不能直接导入火狐。
+- QIJING_SMOKE_DEVICES=1 检查移动端视口/DPR/触摸与三种 Firefox 电脑身份、重启稳定性。

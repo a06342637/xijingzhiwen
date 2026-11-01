@@ -18,13 +18,13 @@ export type Profile=z.infer<typeof profileSchema>;
 export const proxySchema=z.object({id:idSchema,name:z.string().trim().min(1).max(80),protocol:z.enum(['http','https','socks5']),host:z.string().trim().min(1).max(255),port:z.number().int().min(1).max(65535),username:z.string().max(512),password:z.string().max(4096).optional(),hasPassword:z.boolean().optional(),bypass:z.string().max(1024)}).strict();
 export type ProxyConfig=z.infer<typeof proxySchema>;
 export interface Extension {id:string;name:string;path:string;version:string}
-export interface Kernel {id:string;version:string;arch:'arm64'|'x64';path:string;sha256:string;source:'release'|'local';status:Verification;installedAt:string;provenance?:unknown}
+export interface Kernel {id:string;engine?:'chromium'|'firefox';version:string;arch:'arm64'|'x64';path:string;sha256:string;source:'release'|'local';status:Verification;installedAt:string;provenance?:unknown}
 export interface Feature {key:string;label:string;group:string;kind:'select'|'text'|'number'|'toggle'|'directory';default:string|number|boolean;options?:string[];flag?:string;min?:number;max?:number;note:string;status:Verification;source:string;probe?:string;experimental?:boolean;platform?:string}
 export interface Check {feature:string;label:string;status:Verification;expected?:unknown;observed?:unknown;detail:string}
 export interface Report {id:string;profileId:string;profileName:string;kernelId:string;version:string;arch:string;sha256:string;createdAt:string;kind:'environment'|'upstream'|'upgrade'|'device';status:Verification;checks:Check[];observations:unknown;outputDir?:string}
 export interface DownloadProgress {id:string;label:string;received:number;total:number;phase:string;error?:string}
 export interface SoftwareUpdate {phase:'idle'|'checking'|'available'|'current'|'downloading'|'downloaded'|'installing'|'error';version?:string;notes?:string;percent:number;message:string}
-export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;automaticUpdates?:boolean}
+export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;automaticUpdates?:boolean;proxyLocaleDefaultsV1?:boolean}
 export interface AppState {profiles:Profile[];proxies:ProxyConfig[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate}
 export type Reply<T=unknown>={ok:true;data:T}|{ok:false;error:string};
 export interface DesktopApi {invoke<T=unknown>(action:string,payload?:unknown):Promise<T>;onState(callback:(state:AppState)=>void):()=>void}
@@ -33,15 +33,18 @@ declare global { interface Window { qijing:DesktopApi } }
 const base='https://github.com/xiaozhou26/Chromix/blob/'+UPSTREAM_COMMIT+'/docs/';
 function feature(key:string,label:string,group:string,kind:Feature['kind'],value:Feature['default'],flag:string|undefined,note:string,more:Partial<Feature>={}):Feature{return {key,label,group,kind,default:value,flag,note,status:'unverified',source:base+'fingerprint-flags.md',...more};}
 export const FEATURES:Feature[]=[
+ feature('engine','浏览器引擎','身份 / User-Agent','select','chromium',undefined,'火狐使用 Camoufox 测试版；Windows ARM64 通过 x64 兼容运行。',{options:['chromium','firefox'],source:'https://github.com/daijro/camoufox'}),
+ feature('deviceType','环境类型','身份 / User-Agent','select','desktop',undefined,'移动端使用 Chromium 布局模拟，不是真实 Safari、iOS 或安卓系统。',{options:['desktop','iphone','ipad','android'],status:'limited'}),
+ feature('deviceScale','设备像素比 DPR','硬件 / 屏幕','select','1',undefined,'屏幕尺寸使用 CSS/DIP 单位，物理像素约为尺寸乘 DPR。桌面固定视口时生效。',{options:['1','1.25','1.5','2','2.625','3','3.5','4'],status:'limited'}),
  feature('identityMode','身份模式','身份 / User-Agent','select','seeded',undefined,'原生对照关闭身份覆盖；语言与时区仍可显式设置。',{options:['seeded','off']}),
  feature('platform','系统展示','身份 / User-Agent','select','windows','fingerprint-platform','不会更换真实操作系统。',{options:['windows','macos','linux']}),
- feature('brand','浏览器品牌','身份 / User-Agent','select','Chrome','fingerprint-brand','UA 与 Client Hints 通过原生参数共同配置。',{options:['Chrome','Edge','Opera','Vivaldi']}),
+ feature('brand','浏览器品牌','身份 / User-Agent','select','Chrome','fingerprint-brand','Firefox 仅用于火狐内核；火狐原生没有 Chromium Client Hints。',{options:['Chrome','Edge','Opera','Vivaldi','Firefox']}),
  feature('brandVersion','品牌版本','身份 / User-Agent','text','','fingerprint-brand-version','留空跟随内核；并不安装对应版本的厂商功能。'),
  feature('platformVersion','系统版本展示','身份 / User-Agent','text','','fingerprint-platform-version','Client Hints 的系统版本，不改变宿主系统。'),
  feature('userAgent','手动 User-Agent','身份 / User-Agent','text','',undefined,'留空自动生成。手动 UA 可能与 Client Hints 不一致，保存时会提示。'),
  feature('locale','语言','语言 / 时区','text','',undefined,'例如 zh-CN、en-US。留空保留原生，或由出口匹配填充。'),
  feature('timezone','时区','语言 / 时区','text','',undefined,'IANA 名称，例如 Asia/Shanghai。'),
- feature('geoip','按出口匹配','语言 / 时区','toggle',false,undefined,'经有效代理查询 ip-api.com（HTTP）；手动语言、时区、IP 优先，失败中止启动。'),
+ feature('geoip','按代理出口匹配语言与时区','语言 / 时区','toggle',true,undefined,'默认开启；有代理时按实际出口覆盖语言和时区，直连不查询。失败中止启动。关闭后使用手动设置。'),
  feature('webrtcMode','WebRTC 地址展示','WebRTC / 网络','select','native',undefined,'展示地址不等于实际通信路由；自动模式通过出口元数据解析。',{options:['native','auto','custom'],status:'limited'}),
  feature('webrtcIp','手动 WebRTC IP','WebRTC / 网络','text','',undefined,'仅接受 IPv4 / IPv6 字面量，在手动模式下使用。',{status:'limited'}),
  feature('webrtcPolicy','WebRTC 网络策略','WebRTC / 网络','select','auto',undefined,'代理默认限制非代理 UDP；可能影响通话。SOCKS5 不提供 UDP ASSOCIATE。',{options:['auto','default','default_public_interface_only','default_public_and_private_interfaces','disable_non_proxied_udp'],status:'limited'}),

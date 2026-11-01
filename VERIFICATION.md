@@ -1,3 +1,20 @@
+# 栖境 0.1.4 引擎 / 设备 / 代理验收
+
+日期：2026-11-01，Windows ARM64 机器；Firefox x64 兼容运行。
+
+- 46 项测试通过，覆盖旧配置兼容、设备矩阵、随机指纹保持所选系统、火狐限制、代理路由、进程锁和在线更新。
+- 生产构建、隔离 UI 保存与粘贴、移动端 iPhone / iPad / Android 实际屏幕、视口、DPR、5 点触摸、coarse/no-hover 通过。
+- Firefox Windows / macOS / Linux 原生 UA 与屏幕、语言、时区、重启身份一致通过；Cookie/localStorage 重启、空目录隔离、加密同引擎迁移通过。Canvas/音频原生诊断读回通过；WebGL 2/WebGPU 在当前机器仍受限。
+- 使用用户授权的 CA HTTP 认证代理进行 HTTPS、Whoer、DNSLeakTest 和 Google STUN 检查。公开资料不包含凭据、环境目录或完整 IP 明细。
+- Whoer：Chromium 一次显示 100%，Firefox 一次显示 90%，原因是轮换代理跨加拿大城市改变出口，启动时匹配 Halifax，访问时变为 Vancouver。评分不代表全站兼容或防关联效果。
+- 两个引擎带 STUN 的检查未返回可见 ICE 地址；此项不证明所有 TURN/UDP/所有网站没有泄露。
+- DNSLeakTest：代理下返回 Cloudflare/Alibaba（加拿大、德国、日本）；直连对照返回新加坡 Oracle，代理结果没有同样的本机直连解析器。更像供应商解析链路跨区，仍需供应商确认。不能承诺 DNS 必定在 CA。
+- HTTP 代理目的域名解析在代理侧；浏览器限制本地目的解析、QUIC 和非代理 UDP。系统需要解析代理网关域名，这是连接网关的必要步骤。手动绕过规则会开放对应直连。
+- 软件仅发布 Windows ARM64/x64；macOS/Linux 为身份预设，手机和平板为 Chromium 布局模拟，均不是原生系统或 WebKit。
+- 原生 x64 构建/UI 验收由 GitHub Windows runner 执行，浏览器 GPU 原生 x64 验收仍需对应硬件。
+
+以下为历史版本证据。
+
 # 栖境 0.1.3 在线更新验收
 
 日期：2026-11-01（Asia/Shanghai）。
