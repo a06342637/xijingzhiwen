@@ -70,4 +70,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/publish.mjs
-
