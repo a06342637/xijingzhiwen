@@ -13,6 +13,7 @@ import {verifyBrowserFlows} from './browser-verification';
 export async function runSmoke({store,kernels,browsers,components,window,state}:{store:Store;kernels:Kernels;browsers:Browsers;components:Components;window:BrowserWindow;state:()=>Promise<any>}){
  const output=path.resolve(process.env.QIJING_SMOKE_OUTPUT||path.resolve(__dirname,'..','.verification'));await fs.mkdir(output,{recursive:true});await fs.rm(path.join(output,'smoke-error.txt'),{force:true});
  const checks:any[]=[];
+ const {createDashboardPage}=await import('./dashboard-page');const dashboardServer=await createDashboardPage({profileName:'安装包资源验收',engine:'chromium',kernelVersion:'155',architecture:process.arch,proxy:false});try{const font=await fetch(dashboardServer.url+'/font.woff2');assert.equal(font.status,200);assert.equal(font.headers.get('content-type'),'font/woff2');assert.ok((await font.arrayBuffer()).byteLength>10000);assert.ok((await(await fetch(dashboardServer.url)).text()).includes('刷新检测'));checks.push({name:'安装版本地汇总页和中文字体资源',passed:true});}finally{await dashboardServer.close();}
  const profile=newProfile(randomUUID(),newSeed());profile.name='本地验收环境';profile.values.locale='zh-CN';profile.values.timezone='Asia/Shanghai';store.put('profile',profile.id,profile);const copy=store.cloneProfile(profile.id);assert.notEqual(copy.seed,profile.seed);assert.equal(store.get<any>('profile',copy.id).id,copy.id);checks.push({name:'SQLite 保存 / 配置复制',passed:true});store.remove('profile',copy.id);
  const proxyId=randomUUID(),password='Qijing-DPAPI-local-check';await store.saveProxy({id:proxyId,name:'本地加密验收',protocol:'http',host:'127.0.0.1',port:8080,username:'local-test',password,bypass:''});assert.equal((await store.proxy(proxyId)).password,password);assert.equal(store.proxies().find(p=>p.id===proxyId)?.password,undefined);assert.equal((await fs.readFile(path.join(store.root,'qijing.sqlite'))).includes(Buffer.from(password)),false);store.remove('proxy',proxyId);checks.push({name:'Windows safeStorage 密码加密及界面凭据隔离',passed:true});
  await window.webContents.executeJavaScript('new Promise(resolve => setTimeout(resolve, 1000))');
@@ -52,6 +53,14 @@ export async function runSmoke({store,kernels,browsers,components,window,state}:
  if(process.env.QIJING_SMOKE_DEEP_UI==='1'){const {verifyDeepUI}=await import('./deep-ui-verification');checks.push(...await verifyDeepUI(window,store));}
  if(process.env.QIJING_SMOKE_RELIABILITY_UI==='1'){const {verifyReliabilityUI}=await import('./reliability-ui-verification');checks.push(...await verifyReliabilityUI(window));}
  if(process.env.QIJING_SMOKE_UPGRADE==='1'){const {verifyUpgrade}=await import('./upgrade-verification');checks.push(...await verifyUpgrade(store,browsers));}
+ if(process.env.QIJING_SMOKE_DASHBOARD_UI==='1'){
+  await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('.nav-item')).find(e=>e.textContent.includes('软件设置')).click()`);
+  await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,400))');
+  assert.equal(store.settings().startupDashboard,true);
+  await window.webContents.executeJavaScript(`document.querySelector('.dashboard-preference input').click()`);await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,250))');assert.equal(store.settings().startupDashboard,false);
+  await window.webContents.executeJavaScript(`document.querySelector('.dashboard-preference input').click()`);await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,250))');assert.equal(store.settings().startupDashboard,true);
+  assert.ok((await window.webContents.executeJavaScript('document.body.innerText')).includes('第三方站点'));await fs.writeFile(path.join(output,'dashboard-settings.png'),(await window.webContents.capturePage()).toPNG());checks.push({name:'启动汇总页默认开启、设置关闭/恢复和第三方访问说明',passed:true});
+ }
  if(process.env.QIJING_SMOKE_UPDATE_UI==='1'){
   await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('.nav-item')).find(x=>x.textContent.includes('软件设置')).click()`);await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,200))');
   assert.ok(await window.webContents.executeJavaScript(`document.body.innerText.includes('启动时自动检查并下载更新')`));await fs.writeFile(path.join(output,'software-update.png'),(await window.webContents.capturePage()).toPNG());

@@ -1,3 +1,17 @@
+# 栖境 0.1.13 启动环境检测总览验收
+
+日期：2026-11-03，Windows ARM64；Chromix 155.0.8059.79 ARM64、Camoufox 158.0.1-beta.41 x64 兼容运行。
+
+- 95 项单元/回归测试、TypeScript 与生产构建通过。新增真实等级解析、A+ 与多语言成绩、无分站点原始指标、来源/路径校验、重复刷新、报告导出、本地服务关闭及设置迁移覆盖。
+- CA 两引擎、US 两引擎均从同一真实环境采集四站结果。初次 CA Chromium Who D/58、Firefox C/66；最后 US 两引擎 Who D/58，Sannysoft Chromium 8/8、Firefox 7/8 明确项目通过；CreepJS 分别 19%/6% like-headless、0% headless、0% stealth。分数仅该次实测，Firefox Chrome 对象差异保留，未改站点成绩。
+- 页面顶部的 Who 出口与原启动查询分开。US 实测 Chromium 浏览器 America/Chicago、后续 IP America/Denver；Firefox America/New_York、后续 IP America/Chicago，出口轮换在页面展示。不能据此保证代理地区、DNS 与后续连接固定；本任务没有修改代理供应商路由或伪造 RTT。
+- Chromium/Firefox 刷新回归用维护者专用固定 DOM 响应验证结果替换、旧 IP 清除和 BrowserLeaks 出口后备来源；HTTP 503 的站点仅显示自身错误，其他结果保留。刷新中关闭汇总页取消临时检测标签和服务，保留用户标签。固定响应仅测试脚本，软件使用真实站点。
+- 四站采集后只剩原总览标签；配置 example.com 为启动页后保留额外标签。Chromium 和 Firefox 全局关闭只开原 about:blank；内部 blank 诊断不启动站点采集。
+- iPhone 375×667/DPR2 代表模拟通过本地观测与响应布局；不是真实 Safari/WebKit。英文 Windows 字体限制曾导致总览中文方框，补本地开源 OFL 字体后截图复查显示正常；外站字体配置不变。
+- 隔离软件 smoke 通过设置默认开启、关闭/恢复、第三方访问说明以及 Chromium 启停、Cookie/localStorage 持久、下载、扩展和认证 HTTP 代理实际请求。证据 `.verification/dashboard-manager-013/`、`.verification/dashboard-manager-final-013/`、`.verification/dashboard-013/`。
+- US Firefox 首次启动出现 GeoIP 网络失败，按原有不直连回退策略中止；重试成功。站点超时、结构变化或挑战页使用未完成/受限/错误，不自动绕过。
+- x64 原生宿主浏览器指纹、真实移动设备和 macOS/Linux 原生安装仍未在本轮验收。双架构安装版资源/UI及在线下载以发布流程结果为准，未提前声称成功。
+
 # 2026-11-02 日本固定会话代理专项测试
 
 软件 0.1.12，Windows ARM64；Chromix ARM64 / Camoufox x64 兼容运行。用户提供 6 条 JP session 节点，按顺序记 JP1–JP6。仅测试，无运行代码改动；凭据不入仓库。

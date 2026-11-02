@@ -15,3 +15,4 @@
 .hardware-panel{border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:15px}.hardware-panel .advanced-heading{margin-bottom:0}.hardware-filter{display:flex;gap:10px}.hardware-filter input{flex:1;min-width:0}.hardware-filter select{max-width:150px}.hardware-result{padding:12px;border-radius:8px;background:var(--bg);font-size:12px;overflow-wrap:anywhere}.hardware-result p{margin:8px 0}.hardware-panel .inline-notice{margin:0;line-height:1.6}
 
 .editor-fields{border:0;padding:0;margin:0;min-width:0}
+.dashboard-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;margin-left:18px;font-size:13px;color:#335d51}.dashboard-preference input{accent-color:#26725b}

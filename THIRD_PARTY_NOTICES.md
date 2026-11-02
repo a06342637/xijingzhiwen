@@ -2,6 +2,12 @@
 
 Qijing is an independent manager for Chromix; it is not an official Chromix product.
 
+The local startup dashboard bundles a WOFF2 subset of Noto Sans CJK SC Regular,
+from notofonts/noto-cjk tag Sans2.004 (SIL Open Font License 1.1).
+Original license: resources/dashboard-font-LICENSE.txt (installed in dist/).
+This font is served only to the local dashboard and does not change browser
+font whitelists for external sites. Noto fonts are not proprietary fonts.
+
 The bundled Chromix Node/Python SDK and diagnostic sources are from
 https://github.com/xiaozhou26/Chromix at bf3221bcfa08b652ff62a44f52ccce393ef1d351,
 licensed under BSD-3-Clause. Original licenses are retained under vendor/ and

@@ -9,6 +9,8 @@ await Promise.all([
   build({ entryPoints: ['src/renderer/main.tsx'], outfile: 'dist/ui.js', bundle: true, platform: 'browser', format: 'iife', minify: true, define: { 'process.env.NODE_ENV': '"production"' }, loader: { '.css': 'css' } })
 ]);
 await copyFile('src/renderer/index.html', 'dist/index.html');
+await copyFile('resources/dashboard-font.woff2','dist/dashboard-font.woff2');
+await copyFile('resources/dashboard-font-LICENSE.txt','dist/licenses-dashboard-font.txt');
 await mkdir('dist/licenses', {recursive:true});
 const inventory=[];
 async function scan(dir){for(const item of await readdir(dir,{withFileTypes:true})){if(!item.isDirectory()&&!item.isSymbolicLink())continue;const folder=path.join(dir,item.name);if(item.name.startsWith('@')){await scan(folder);continue;}try{const p=JSON.parse(await readFile(path.join(folder,'package.json'),'utf8'));const files=(await readdir(folder)).filter(f=>/^(license|copying|notice)/i.test(f));for(const f of files){try{await copyFile(path.join(folder,f),path.join('dist/licenses',(p.name+'-'+f).replaceAll('/','_')));}catch{}}inventory.push({name:p.name,version:p.version,license:p.license});}catch{}}}

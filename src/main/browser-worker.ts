@@ -7,9 +7,10 @@ import {firefoxCookies} from './firefox-cookies';
 import {mobileUA,mobileIdentity} from '../shared/devices';
 import {resolveProxyLocale} from './proxy-locale';
 import {checkProxyRoute} from './proxy-check';
+import {launchDashboard} from './dashboard';
 let resolvedGeo:unknown;
 const pageReady=new WeakMap<object,Promise<void>>();
-let context:any,profile:any,kernel:any,initial:any;
+let context:any,profile:any,kernel:any,initial:any,dashboard:Awaited<ReturnType<typeof launchDashboard>>|undefined;
 const send=(msg:unknown)=>{if(process.connected)process.send?.(msg,()=>{});};
 let secretValues:string[]=[];
 function safeError(error:unknown){let msg=error instanceof Error?error.message:String(error);for(const s of secretValues)if(s)msg=msg.split(s).join('[已隐藏]');return msg.slice(0,2500);}
@@ -38,7 +39,11 @@ async function start(payload:any){
  const attach=(page:any)=>page.on('download',async(download:any)=>{try{const directory=profile.downloadDir||payload.downloadDir;await fs.mkdir(directory,{recursive:true});const suggested=path.basename(download.suggestedFilename()).replace(/[<>:"/\\|?*\x00-\x1f]/g,'_');const {randomUUID}=await import('node:crypto');const target=path.join(directory,Date.now()+'-'+randomUUID().slice(0,8)+'-'+suggested);await download.saveAs(target);send({event:'download',filename:path.basename(target)});}catch(e){send({event:'notice',error:safeError(e)});}});
  context.pages().forEach(attach);context.on('page',attach);
  send({event:'started'});
- if(!payload.blank){const active=context,urls=[...profile.startUrls];void(async()=>{const pages=active.pages();for(const [i,url] of urls.entries()){if(active.pages().length===0)return;try{const page=i===0&&pages[0]?pages[0]:await active.newPage();await pageReady.get(page);await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});}catch(error){if(active.pages().length===0)return;send({event:'notice',error:safeError(error)});}}})().catch(error=>send({event:'notice',error:safeError(error)}));}
+ if(!payload.blank){
+  if(payload.startupDashboard!==false){try{const geo=resolvedGeo as any;dashboard=await launchDashboard(context,{profileName:profile.name,engine:profile.values.engine,kernelVersion:kernel.version,architecture:kernel.arch,proxy:Boolean(payload.proxy),startup:geo?{exitIp:geo.exitIp,timezone:geo.timezone,locale:geo.locale}:undefined},async page=>{await pageReady.get(page);},safeError);}catch(error){send({event:'notice',error:'启动检测总览失败：'+safeError(error)});}}
+  const active=context,urls=profile.startUrls.filter((url:string)=>!dashboard||url!=='about:blank');
+  void(async()=>{const pages=active.pages();for(const [i,url] of urls.entries()){if(active.pages().length===0)return;try{const page=!dashboard&&i===0&&pages[0]?pages[0]:await active.newPage();await pageReady.get(page);await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});}catch(error){if(active.pages().length===0)return;send({event:'notice',error:safeError(error)});}}if(dashboard&&!dashboard.page.isClosed())await dashboard.page.bringToFront();})().catch(error=>send({event:'notice',error:safeError(error)}));
+ }
 }
 async function request(action:string,payload:any){
  if(action==='start'){await start(payload);return true;}
