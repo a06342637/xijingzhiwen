@@ -10,7 +10,8 @@
 - 临时仅把 navigator.connection.rtt 改为 20ms：设备网络行显示 20ms，但实际延迟项仍为约 342ms 对 42ms，继续警告。没有修改 Resource Timing/Date.now/服务器响应或检测页分数，也没有把无效 rtt 伪装加入软件。证据 `.verification/latency-fake-property/`。
 - 临时开启网页建议的 Firefox resistFingerprinting：指纹可追踪项变通过，但时区被覆盖为 Atlantic/Reykjavik（UTC）、屏幕/DPR/GPU 也改变，失去原 CA 身份一致性。测试撤销，未作为默认发布；证据 `.verification/firefox-rfp-advice/`。
 - 不挂应用代理的 Chromium 对照：当前宿主公网/DNS 在新加坡，多个服务显示同一出口，HTTP/3/ECH 可用，未显示 DNS 跨国；原生 zh-CN 字体/语言仍被判断中国，与出口不符。只证明当前路径对照，不称本机网络没有其他中间层。证据 `.verification/region-direct-compare/`。
-- 82 项测试、TypeScript/生产构建和隔离桌面烟测通过；设置/字体/随机/批量创建/Chromium 启停及上述火狐主题验收通过。凭据不入仓库，测试修改仅在临时 worker 生效。0.1.11 双架构发布结果完成后补充；旧公开二进制不替换。
+- 82 项测试、TypeScript/生产构建和隔离桌面烟测通过；设置/字体/随机/批量创建/Chromium 启停及上述火狐主题验收通过。凭据不入仓库，测试修改仅在临时 worker 生效。
+- GitHub Actions Run 41449337133 的 ARM64/x64 原生构建、82 项测试、安装包启动、附件校验与完整发布通过。v0.1.11 已公开；真实 updater 分别下载两种架构并通过 SHA-512（`.verification/github-update/result.json`）。本轮未重复实际安装迁移验证；此前安装证据保持其版本范围。测试结束无遗留浏览器或 updater 进程，旧公开二进制不替换。
 
 # 栖境 0.1.10 CA / US 代理与指纹实测
 
