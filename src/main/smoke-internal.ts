@@ -48,6 +48,7 @@ export async function runSmoke({store,kernels,browsers,components,window,state}:
  if(process.env.QIJING_SMOKE_DEVICE_UI==='1'){const {verifyDeviceUI}=await import('./device-ui-verification');checks.push(...await verifyDeviceUI(window,store));}
  if(process.env.QIJING_SMOKE_HARDWARE==='1'){const {verifyHardware,verifyHardwareUI}=await import('./hardware-verification');checks.push(...await verifyHardwareUI(window,store));checks.push(...await verifyHardware(store,browsers,output));}
  if(process.env.QIJING_SMOKE_HARDWARE_UI==='1'){const {verifyHardwareUI}=await import('./hardware-verification');checks.push(...await verifyHardwareUI(window,store));}
+ if(process.env.QIJING_SMOKE_DEEP_UI==='1'){const {verifyDeepUI}=await import('./deep-ui-verification');checks.push(...await verifyDeepUI(window,store));}
  if(process.env.QIJING_SMOKE_UPDATE_UI==='1'){
   await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('.nav-item')).find(x=>x.textContent.includes('软件设置')).click()`);await window.webContents.executeJavaScript('new Promise(resolve=>setTimeout(resolve,200))');
   assert.ok(await window.webContents.executeJavaScript(`document.body.innerText.includes('启动时自动检查并下载更新')`));await fs.writeFile(path.join(output,'software-update.png'),(await window.webContents.capturePage()).toPNG());

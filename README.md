@@ -6,7 +6,7 @@ Windows 多环境浏览器管理软件。管理界面使用 Electron / React / T
 
 ## 安装与开始使用
 
-1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.7-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.7-x64-Setup.exe`。未配置代码签名证书。
+1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.8-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.8-x64-Setup.exe`。未配置代码签名证书。
 2. 在“内核管理”下载 Chromix 或 Firefox / Camoufox，或导入完整本地内核目录中的可执行文件。软件安装包不包含浏览器内核；诊断 Python 组件也按需下载。
 3. 新建环境，选择引擎、系统/设备、内核、硬件参数与代理，保存后点击“启动环境”。网页由用户自己操作。
 4. 每个环境有独立数据目录和登录数据。配置修改关闭后保存，重新启动生效。复制只复制配置，生成新种子，不复制 Cookie 或本地存储。
@@ -46,7 +46,7 @@ Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camouf
 - 组合内存 16/32/64GB 等为记录，`deviceMemory` 为离散/限幅浏览器值（常见为 8）；火狐没有该 API。
 - 显卡配置修改 WebGL Vendor/Renderer 名称，不能替换真实显卡、驱动、算力、GL 扩展、像素或 WebGPU。原生软件渲染/不可用上下文可能不覆盖名称。
 - 组合按系统筛选，不随机现代 RTX 到 macOS，Intel/AMD 集显不跨 CPU 平台。单选 CPU/GPU 会保留本次选择，只调整不兼容的另一侧。
-- 硬件随机默认开启；一键/批量随机从当前系统组合中选择。关闭后保留手选硬件，移动模拟保持自身配置。
+- 硬件随机默认开启；一键/批量随机从当前系统组合中选择。关闭后保留手选硬件，移动模拟保持自身配置。随机也保留关闭全局扰动和原生对照选择，不自动重启这些覆盖。macOS/Linux 电脑随机触摸点为 0。
 - 手动修改线程数或 WebGL 参数会清除旧型号记录；自定义组合明确显示，不误标为原生 GPU。
 
 手动 UA 可能与 Client Hints 不一致。切换引擎会清除上一引擎的手动 UA 和版本；已有环境不能直接跨引擎改写登录目录，请新建。
@@ -55,7 +55,7 @@ Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camouf
 
 默认自动识别 `hostname:port:username:password`，也支持 `用户名:密码@主机:端口` 等五种格式及 HTTP/HTTPS/SOCKS5 URL。歧义格式需要选定格式后解析；协议不随凭据猜测，未带协议使用当前选定协议。
 
-新环境默认打开“按代理出口匹配语言与时区”：有代理时在启动前查询实际出口，覆盖手动语言和时区；关闭开关后使用手动值。直连不查询，查询失败中止启动；已有环境保留自己的配置。多时区国家依据启动时的出口城市，轮换代理后续 IP 变化可能导致不一致，建议供应商提供固定会话。
+新环境默认打开“按代理出口匹配语言与时区”：有代理时在启动前查询实际出口，覆盖手动语言和时区；关闭开关后使用手动值。直连不查询，查询失败中止启动；已有环境保留自己的配置。同一代理并发保存按顺序写入，保存期间不能删除或退出/安装更新，避免旧密码覆盖新密码。多时区国家依据启动时的出口城市，轮换代理后续 IP 变化可能导致不一致，建议供应商提供固定会话。
 
 代理默认限制非代理 UDP；Chromium 禁用 QUIC 并限制目的域名本地解析；Firefox 启用远端 SOCKS DNS、关闭预取和直连回退。本地诊断走回环。手动绕过和放宽 WebRTC 策略会改变路由限制。网关域名仍需由本机解析以建立连接。
 
@@ -63,7 +63,7 @@ Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camouf
 
 ## 默认设置、更新与数据
 
-默认指纹只用于新建，已有环境保留自己的参数。每次批量最多 100 个环境，独立种子和目录；多个环境应留空下载路径使用各自目录。
+默认指纹只用于新建，已有环境保留自己的参数。随机及保存期间编辑区暂时锁定，模式切换会重选匹配引擎的内核并清理旧设备记录。每次批量最多 100 个环境，独立种子和目录；多个环境应留空下载路径使用各自目录。
 
 启动后默认检查 GitHub 并下载对应架构新版，SHA-512 通过后提示“安装并重启”。可关闭自动检查，手动点击“检查更新”。安装前正常关闭环境，准备期间出错取消此次安装；不会在用户工作中直接重启。0.1.1 及更早版本需手动安装一次。
 
@@ -73,7 +73,7 @@ Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camouf
 
 ## 验证与已知限制
 
-0.1.7 本轮：62 项测试、TypeScript/生产构建、硬件 UI、启动/停止/诊断竞争、会话、Cookie、下载、扩展和代理认证回归通过；具体证据与发布状态见 [VERIFICATION.md](VERIFICATION.md)。
+0.1.8 本轮：70 项测试、TypeScript/生产构建、硬件 UI、启动/停止/诊断竞争、会话、Cookie、下载、扩展和代理认证回归通过；具体证据与发布状态见 [VERIFICATION.md](VERIFICATION.md)。
 
 本机 Windows ARM64 的 Chromium 图形上下文受限，相关 WebGL/WebGPU 不标“已验证”，没有绕过 GPU blocklist。火狐代表组合 WebGL 1 名称曾实测匹配，但不证明完整 GPU 或像素能力一致。原生 x64 GPU 全量检查仍需对应硬件，不能用构建通过代替。
 
@@ -90,7 +90,7 @@ npm run smoke
 npm run pack
 ```
 
-`npm run smoke` 使用隔离测试数据。可设置 `QIJING_SMOKE_BROWSER=1`、`QIJING_SMOKE_FLOWS=1`、`QIJING_SMOKE_RACES=1`、`QIJING_SMOKE_HARDWARE_UI=1`、`QIJING_SMOKE_HARDWARE=1`、`QIJING_SMOKE_DEVICE_UI=1`；`QIJING_SMOKE_DEVICES=1` 配合 `QIJING_SMOKE_DEVICE_MATRIX=1` 验证 13 组设备横竖屏。报告/截图在 `.verification/`，不上传用户数据。
+`npm run smoke` 使用隔离测试数据。可设置 `QIJING_SMOKE_BROWSER=1`、`QIJING_SMOKE_FLOWS=1`、`QIJING_SMOKE_RACES=1`、`QIJING_SMOKE_DEEP_UI=1`、`QIJING_SMOKE_HARDWARE_UI=1`、`QIJING_SMOKE_HARDWARE=1`、`QIJING_SMOKE_DEVICE_UI=1`；`QIJING_SMOKE_DEVICES=1` 配合 `QIJING_SMOKE_DEVICE_MATRIX=1` 验证 13 组设备横竖屏。报告/截图在 `.verification/`，也可用 `QIJING_SMOKE_OUTPUT` 选择本次输出；不上传用户数据。
 
 源码目录 `C:\Users\adminuser\Downloads\xijingzhiwen`；产物目录相邻 `xijing发行版本/<版本号>`。上游固定提交与诊断组件摘要位于 `resources/upstream.json`、`resources/components.json`，第三方许可证保留在安装资源及 `dist/licenses/`。
 

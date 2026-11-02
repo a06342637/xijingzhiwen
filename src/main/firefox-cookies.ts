@@ -1,9 +1,16 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
+import {randomUUID} from 'node:crypto';
+export async function publishCookieFile(file:string,data:Uint8Array){
+ const temporary=path.join(path.dirname(file),'.'+path.basename(file)+'.'+randomUUID()+'.tmp');
+ const handle=await fs.open(temporary,'wx',0o600);
+ try{try{await handle.writeFile(data);await handle.sync();}finally{await handle.close();}await fs.link(temporary,file);}finally{await fs.rm(temporary,{force:true});}
+}
 export async function firefoxCookies(context:any,action:string,file:string,passphrase:string){
  const {encryptCookies,decryptCookies}=await import('@xiaoxiaofeihh/chromix/cookies');
  if(action==='exportCookies'){
   const cookies=await context.cookies();if(cookies.some((c:any)=>c.partitionKey))throw new Error('当前火狐迁移不支持分区 Cookie');
-  const clean=cookies.map((c:any)=>Object.fromEntries(['name','value','domain','path','secure','httpOnly','expires','sameSite'].filter(k=>c[k]!==undefined&&c[k]!==null&&!(k==='sameSite'&&c[k]==='None'&&!c.secure)).map(k=>[k,c[k]])));const data=await encryptCookies(clean,passphrase);const handle=await fs.open(file,'wx',0o600);try{await handle.writeFile(data);await handle.sync();}finally{await handle.close();}return {exported:cookies.length,formatVersion:1};
+  const clean=cookies.map((c:any)=>Object.fromEntries(['name','value','domain','path','secure','httpOnly','expires','sameSite'].filter(k=>c[k]!==undefined&&c[k]!==null&&!(k==='sameSite'&&c[k]==='None'&&!c.secure)).map(k=>[k,c[k]])));const data=await encryptCookies(clean,passphrase);await publishCookieFile(file,data);return {exported:cookies.length,formatVersion:1};
  }
  if((await context.cookies()).length)throw new Error('目标 Cookie 必须为空');
  if((await fs.stat(file)).size>16*1024**2)throw new Error('Cookie 文件过大');

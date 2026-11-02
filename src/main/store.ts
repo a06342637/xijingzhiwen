@@ -4,13 +4,16 @@ import path from 'node:path';
 import { randomUUID,randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import type {Profile,ProxyConfig,Kernel,Extension,Report,AppState} from '../shared/model';
-import {defaultValues} from '../shared/model';
+import {defaultValues,proxySchema} from '../shared/model';
+import {proxyUrl} from '../shared/config';
 const moduleRequire=createRequire(typeof __filename==='string'?__filename:path.join(process.cwd(),'package.json'));
 export function inside(root:string,...parts:string[]){const target=path.resolve(root,...parts);const relative=path.relative(path.resolve(root),target);if(relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative))throw new Error('路径超出工作空间');return target;}
 export function newSeed(){return (randomBytes(8).readBigUInt64BE()||1n).toString();}
 export interface CryptoStore {encryptString(s:string):Buffer|Promise<Buffer>;decryptString(b:Buffer):string|Promise<string>;isEncryptionAvailable():boolean|Promise<boolean>}
 export class Store {
  readonly deleting=new Set<string>();
+ private proxyWrites=new Map<string,Promise<unknown>>();
+ get saving(){return this.proxyWrites.size>0;}
  private db!:Database;private sql!:Awaited<ReturnType<typeof initSqlJs>>;private dbPath:string;private closed=false;
  constructor(public root:string,private crypto:CryptoStore){this.dbPath=path.join(root,'qijing.sqlite');}
  async init(){fs.mkdirSync(this.root,{recursive:true});for(const d of ['profiles','downloads','kernels','reports','devices','components','extensions','trash','upgrade-tests'])fs.mkdirSync(path.join(this.root,d),{recursive:true});this.sql=await initSqlJs({locateFile:()=>moduleRequire.resolve('sql.js/dist/sql-wasm.wasm')});this.db=fs.existsSync(this.dbPath)?new this.sql.Database(fs.readFileSync(this.dbPath)):new this.sql.Database();this.db.run('CREATE TABLE IF NOT EXISTS objects(kind TEXT NOT NULL,id TEXT NOT NULL,data TEXT NOT NULL,PRIMARY KEY(kind,id)); CREATE TABLE IF NOT EXISTS secrets(id TEXT PRIMARY KEY,data TEXT NOT NULL); PRAGMA user_version=1;');this.persist();}
@@ -19,10 +22,18 @@ export class Store {
  all<T>(kind:string):T[]{const st=this.db.prepare('SELECT data FROM objects WHERE kind=? ORDER BY rowid DESC');st.bind([kind]);const result:T[]=[];while(st.step())result.push(JSON.parse(st.getAsObject().data as string));st.free();return result;}
  get<T>(kind:string,id:string):T {const st=this.db.prepare('SELECT data FROM objects WHERE kind=? AND id=?');st.bind([kind,id]);const found=st.step()?JSON.parse(st.getAsObject().data as string):null;st.free();if(!found)throw new Error('记录不存在或已删除');return found;}
  put<T>(kind:string,id:string,value:T){return this.mutate(()=>{this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data',[kind,id,JSON.stringify(value)]);return value;});}
- remove(kind:string,id:string){this.mutate(()=>{this.db.run('DELETE FROM objects WHERE kind=? AND id=?',[kind,id]);if(kind==='proxy')this.db.run('DELETE FROM secrets WHERE id=?',[id]);});}
+ remove(kind:string,id:string){if(kind==='proxy'&&this.proxyWrites.has(id))throw new Error('代理正在保存，请完成后删除');this.mutate(()=>{this.db.run('DELETE FROM objects WHERE kind=? AND id=?',[kind,id]);if(kind==='proxy')this.db.run('DELETE FROM secrets WHERE id=?',[id]);});}
  profiles(){return this.all<Profile>('profile').map(p=>({...p,values:{...defaultValues(),...p.values}}));} kernels(){return this.all<Kernel>('kernel');} extensions(){return this.all<Extension>('extension');} reports(){return this.all<Report>('report').slice(0,100);}
  createProfiles(profiles:Profile[]){return this.mutate(()=>{for(const p of profiles)this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?)',['profile',p.id,JSON.stringify(p)]);return profiles;});}
- async saveProxy(p:ProxyConfig){const {password,...clean}=p;let encrypted:string|undefined;if(password){if(!await this.crypto.isEncryptionAvailable())throw new Error('Windows 加密不可用，无法保存代理密码');encrypted=(await this.crypto.encryptString(password)).toString('base64');}return this.mutate(()=>{if(password!==undefined){if(encrypted)this.db.run('INSERT OR REPLACE INTO secrets(id,data) VALUES(?,?)',[p.id,encrypted]);else this.db.run('DELETE FROM secrets WHERE id=?',[p.id]);}const data={...clean,hasPassword:this.hasSecret(p.id)};this.db.run('INSERT OR REPLACE INTO objects(kind,id,data) VALUES(?,?,?)',['proxy',p.id,JSON.stringify(data)]);return data;});}
+ saveProxy(raw:ProxyConfig){
+  const p=proxySchema.parse(raw),previous=this.proxyWrites.get(p.id);
+  const task=(async()=>{if(previous)await previous.catch(()=>{});const {password,...clean}=p;let effective=password;
+   if(effective===undefined&&this.proxies().some(x=>x.id===p.id))effective=(await this.proxy(p.id)).password;
+   proxyUrl({...p,password:effective});let encrypted:string|undefined;
+   if(password){if(!await this.crypto.isEncryptionAvailable())throw new Error('Windows 加密不可用，无法保存代理密码');encrypted=(await this.crypto.encryptString(password)).toString('base64');}
+   return this.mutate(()=>{if(password!==undefined){if(encrypted)this.db.run('INSERT OR REPLACE INTO secrets(id,data) VALUES(?,?)',[p.id,encrypted]);else this.db.run('DELETE FROM secrets WHERE id=?',[p.id]);}const data={...clean,hasPassword:this.hasSecret(p.id)};this.db.run('INSERT OR REPLACE INTO objects(kind,id,data) VALUES(?,?,?)',['proxy',p.id,JSON.stringify(data)]);return data;});
+  })();this.proxyWrites.set(p.id,task);const clear=()=>{if(this.proxyWrites.get(p.id)===task)this.proxyWrites.delete(p.id);};void task.then(clear,clear);return task;
+ }
  private hasSecret(id:string){const st=this.db.prepare('SELECT id FROM secrets WHERE id=?');st.bind([id]);const found=st.step();st.free();return found;}
  proxies(){return this.all<ProxyConfig>('proxy');}
  async proxy(id:string){const p=this.get<ProxyConfig>('proxy',id);const st=this.db.prepare('SELECT data FROM secrets WHERE id=?');st.bind([id]);const encrypted=st.step()?st.getAsObject().data as string:undefined;st.free();if(encrypted)p.password=await this.crypto.decryptString(Buffer.from(encrypted,'base64'));return p;}
