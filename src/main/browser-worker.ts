@@ -17,12 +17,13 @@ async function sdk(){return import('@xiaoxiaofeihh/chromix');}
 async function diagnostic(){
  if(!context)throw new Error('环境未运行');
  const local=await diagnosticPage();let page:any,reused=false,timer:NodeJS.Timeout|undefined;
- try{page=context.pages().find((p:any)=>p.url()==='about:blank');reused=Boolean(page);page??=await context.newPage();await pageReady.get(page);await page.goto(local.url,{waitUntil:'load',timeout:15000});const observation=await Promise.race([local.result,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('诊断超时，部分 API 可能受实验设置影响')),25000);})]);return {observation,headers:local.headers(),resolvedGeo,version:context.browser()?.version?.(),headless:false};}
+ try{page=context.pages().find((p:any)=>p.url()==='about:blank');reused=Boolean(page);page??=await context.newPage();await pageReady.get(page);await page.goto(local.url,{waitUntil:'load',timeout:15000});const observation=await Promise.race([local.result,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('诊断超时，部分 API 可能受实验设置影响')),25000);})]);return {observation,headers:local.headers(),resolvedGeo,effectiveValues:profile.values,version:context.browser()?.version?.(),headless:false};}
  finally{if(timer)clearTimeout(timer);if(page?.url()===local.url){if(reused)await page.goto('about:blank',{timeout:5000}).catch(()=>{});else await page.close().catch(()=>{});}await local.close();}
 }
 async function start(payload:any){
  profile=payload.profile;kernel=payload.kernel;initial=payload;secretValues=[payload.proxy?.password,payload.proxy?.username].filter(Boolean);
  const matched=await resolveProxyLocale(profile,payload.proxy);profile=matched.profile;resolvedGeo=matched.geo;
+ if(payload.proxy&&matched.geo&&profile.values.randomStrategy!=='catalog')send({event:'notice',error:'已通过绑定代理匹配当前出口；供应商 DNS、TCP 特征和后续出口轮换仍需实测，建议使用固定会话。'});
  process.env.CLOAKBROWSER_BINARY_PATH=kernel.path;process.env.CLOAKBROWSER_WIDEVINE=profile.values.widevine==='disabled'?'0':'1';if(profile.values.widevine==='custom')process.env.CLOAKBROWSER_WIDEVINE_CDM=profile.values.widevinePath;
  const lib=await sdk();
  if(profile.values.engine==='firefox')context=await launchFirefox(profile,kernel.path,payload.profileDir,kernel.version,payload.proxy);

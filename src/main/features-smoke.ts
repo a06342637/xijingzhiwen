@@ -21,6 +21,7 @@ export async function featureSmoke(window:BrowserWindow,output:string){
  let state=await js<AppState>("window.qijing.invoke('state')");assert.equal(state.settings.fingerprintDefaults.locale,'ja-JP');assert.equal(state.settings.fingerprintDefaults.fakeShadowRoot,true);
  await click('高级配置','.defaults-panel .editor-tabs button');await click('语言 / 时区','.advanced-nav button');await screenshot('settings-defaults.png');
  await click('浏览器环境','.nav-item');await click('新建环境','.page-header button');
+ assert.equal(await js("document.querySelector('[aria-label=\"代理来源\"]').value"),'');assert.equal(await js("document.querySelector('[aria-label=\"随机生成策略\"]').value"),'consistent');
  await click('高级配置','.modal .editor-tabs button');await click('语言 / 时区','.modal .advanced-nav button');assert.equal(await js("document.querySelector('#setting-locale').value"),'ja-JP');
  await click('实验设置','.modal .editor-tabs button');assert.equal(await js("document.querySelector('#setting-fakeShadowRoot').checked"),true);
  await click('基础设置','.modal .editor-tabs button');

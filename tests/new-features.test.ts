@@ -31,7 +31,7 @@ test('defaults validate cross-field rules and preference patches preserve them',
  const p=newProfile(randomUUID(),'1','',settings.fingerprintDefaults);p.name='one';p.values.locale='en-US';assert.equal(settings.fingerprintDefaults.locale,'ja-JP');
 });
 test('random personas stay valid and preserve explicit network/locale/experimental choices',()=>{
- const base={...defaultValues(),geoip:true,timezone:'Asia/Tokyo',locale:'ja-JP',webrtcMode:'custom',webrtcIp:'203.0.113.5',synthetic:true};
+ const base={...defaultValues(),randomStrategy:'catalog',geoip:true,timezone:'Asia/Tokyo',locale:'ja-JP',webrtcMode:'custom',webrtcIp:'203.0.113.5',synthetic:true};
  const variants=new Set<string>();
  for(let i=0;i<250;i++){const p=newProfile(randomUUID(),String(i+1));p.name='random';p.values=randomFingerprint(base);validateProfile(p);const options=buildOptions(p,'C:/browser.exe','C:/data',[]);assert.ok(options.args.includes('--fingerprint-pixel-noise=seeded'));assert.equal(p.values.locale,base.locale);assert.equal(p.values.timezone,base.timezone);assert.equal(p.values.webrtcIp,base.webrtcIp);assert.equal(p.values.synthetic,true);assert.equal(p.values.canvasBridgeConsent,false);variants.add(JSON.stringify(p.values));}
  assert.ok(variants.size>100);

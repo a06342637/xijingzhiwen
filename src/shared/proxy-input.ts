@@ -29,7 +29,9 @@ export function parseProxyInput(input:string,format:ProxyFormat='auto',fallback:
  if(format!=='auto')return parse(format);
  if(text.includes('##'))return parse('host-hash');
  const candidates:Parsed[]=[];
- for(const kind of (text.includes('@')?['user-at','host-at']:['host-colon','user-colon']) as ProxyFormat[]){try{const p=parse(kind);if(!candidates.some(c=>JSON.stringify(c)===JSON.stringify(p)))candidates.push(p);}catch{}}
+ // An @ may be part of a password in host:port:user:password, so test both
+ // separator families and only accept a unique parse.
+ for(const kind of ['user-at','host-at','host-colon','user-colon'] as ProxyFormat[]){try{const p=parse(kind);if(!candidates.some(c=>JSON.stringify(c)===JSON.stringify(p)))candidates.push(p);}catch{}}
  if(candidates.length===1)return candidates[0];
  if(candidates.length>1)throw new Error('这条代理可匹配多种格式，请选择具体格式后解析');
  try{return {protocol:fallback,...endpoint(text),username:'',password:''};}catch{throw new Error('无法识别代理，请选择对应格式或手动填写');}

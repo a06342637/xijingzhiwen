@@ -1,3 +1,18 @@
+# 栖境 0.1.12 多检测站、随机策略与默认直连
+
+日期：2026-11-02，Windows ARM64；Chromix 155.0.8059.79 ARM64 与 Camoufox 158.0.1-beta.41 x64 兼容运行。用户 CA/US 凭据仅临时本地，未进入仓库。
+
+- 通过应用 worker 原启动链路，把整条代理自动解析为主机/端口/认证，实际访问 BrowserLeaks IP/WebRTC/JavaScript、Sannysoft 和 CreepJS；覆盖 CA Chromium、US Firefox，并追加 US Chromium、CA Firefox 和不挂应用代理对照。证据 `.verification/multi-site-012*`。没有改网站评分或输出。
+- BrowserLeaks 公网识别 CA/US；WebRTC 页面显示 No Leak，无可见本地/公共 ICE 地址。页面 IPv6 地址与本机直连地址不同；部分 IPv6 测试连接失败，不当作通过。JS/HTTP UA 和语言分别对应引擎与 en-CA/en-US，Worker 在 CreepJS 读取的语言/时区/核心数与页面一致。
+- 完整 DNS：US Chromium 48 Servers / 8 ISP / 19 Locations，包含德国；CA Firefox 72 Servers / 5 ISP / 13 Locations，包含美国、日本、墨西哥、德国等。直连 Chromium 3 Servers / 1 ISP / 1 Location，仅 Oracle 新加坡，与本机公网一致。没有观察到代理报告同样的本机 DNS，仍不宣称无泄漏；多国 DNS/连接轮换是这两条代理必须解决的问题。
+- TCP/IP 服务端指纹在代理连接判 Android，直连判 Windows，UA 保持 Windows。TLS/HTTP2 属于实际引擎，不能用修改 JS 属性修复代理 TCP 握手。建议供应商提供固定会话/地区 DNS/原生出口传输，未擅改认证会话格式。
+- Sannysoft Chromium 的 webdriver/advanced、iframe、插件类型、屏幕和主要扫描项通过；Firefox 的 Chrome 对象项显示 missing，是引擎差异，未伪造 Chrome。该站故意空参数调用原生 API 的页面错误保留，不当成软件故障。
+- CreepJS 普通组合模式可观测 Canvas rgba 扰动和真实 GPU/架构限制；增加一致性优先，保留原生 GPU/真实内核品牌，电脑触摸点 0，默认像素/音频原生，显式策略保留。最终 CA Chromium 报告不再显示 rgba noise，headless=0%；US Firefox like-headless/headless/stealth 均为 0%。部分 like-headless 特征、字体/系统栅格、软件渲染能力仍受真实宿主限制，分数不作安全保证。证据 `.verification/recommended-012-final/`。
+- 默认生成不绑定代理，Chromium 显式 no-proxy-server / Firefox network.proxy.type=0。需要时创建页一次粘贴；自动解析新增密码含 @/冒号组合覆盖。推荐 CA/US 自动匹配同步使用真实英文字体名单，保留手动名单、匹配关闭与已有配置。effectiveValues 附在诊断中，不写回用户保存配置。
+- 试验 Firefox DoH-only：初次代理网关无法解析；排除网关本地域名解析后可访问，DNS 测试仍返回约 70 个多国解析器。未把未解决问题的设置接入默认；没有直连回退、改系统 DNS 或关闭网络安全限制。证据 `.verification/multi-site-012-doh*`。
+- 91 项测试与 TypeScript/生产构建通过；隔离 smoke 的默认直连选项/推荐策略、代理粘贴、默认预设/随机/批量、真实 Chromium 启停、Cookie/localStorage、下载、扩展、HTTP 认证代理，以及两引擎三种桌面身份、iPhone/iPad/Android 代表模式通过。证据 `.verification/random-consistent-012/smoke.json`。新字段对旧普通/实测模式兼容，旧环境不自动改为推荐模式。
+- 0.1.12 发布结果完成后补充。软件默认策略强调一致性和兼容；无法以有限页面验收证明匿名、安全或所有网站满分。
+
 # 栖境 0.1.11 检测站建议复查与 Firefox 主题修复
 
 日期：2026-11-02，Windows ARM64；Chromix 155.0.8059.79 ARM64，Camoufox 158.0.1-beta.41 x64 兼容运行。

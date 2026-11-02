@@ -25,7 +25,7 @@ export function chunkConfig(config:Record<string,unknown>){
 }
 export function firefoxNetworkPrefs(v:Profile['values'],proxied:boolean){
  const policy=String(v.webrtcPolicy),restricted=policy==='disable_non_proxied_udp'||(policy==='auto'&&proxied);
- return {'network.proxy.socks_remote_dns':true,'media.peerconnection.ice.proxy_only':restricted,'media.peerconnection.ice.proxy_only_if_behind_proxy':restricted,'media.peerconnection.ice.no_host':restricted||policy==='default_public_interface_only','media.peerconnection.ice.default_address_only':restricted||policy==='default_public_interface_only'||policy==='default_public_and_private_interfaces'};
+ return {...(!proxied?{'network.proxy.type':0}:{}),'network.proxy.socks_remote_dns':true,'media.peerconnection.ice.proxy_only':restricted,'media.peerconnection.ice.proxy_only_if_behind_proxy':restricted,'media.peerconnection.ice.no_host':restricted||policy==='default_public_interface_only','media.peerconnection.ice.default_address_only':restricted||policy==='default_public_interface_only'||policy==='default_public_and_private_interfaces'};
 }
 export function firefoxAppearancePrefs(v:Profile['values']){
  // A page-level Juggler override can be lost when navigation replaces the

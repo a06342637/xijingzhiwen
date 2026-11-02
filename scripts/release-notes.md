@@ -1,11 +1,11 @@
-栖境 0.1.11
+栖境 0.1.12
 
 ## 先看这里：你的电脑下载哪个？
 
 | 你的电脑 | 应下载的安装包 |
 | --- | --- |
-| Windows 10/11，Intel 酷睿或 AMD 锐龙等常见电脑 | **Qijing-0.1.11-x64-Setup.exe** |
-| Windows 10/11 ARM 电脑，例如骁龙 Snapdragon、Surface Pro X | **Qijing-0.1.11-arm64-Setup.exe** |
+| Windows 10/11，Intel 酷睿或 AMD 锐龙等常见电脑 | **Qijing-0.1.12-x64-Setup.exe** |
+| Windows 10/11 ARM 电脑，例如骁龙 Snapdragon、Surface Pro X | **Qijing-0.1.12-arm64-Setup.exe** |
 | 苹果 Mac，M1/M2/M3/M4 等 Apple 芯片 | **目前没有 macOS 安装包，不能使用上面的 Windows .exe** |
 | 苹果 Mac，Intel 芯片，正在运行 macOS | **目前没有 macOS 安装包** |
 | Linux 电脑 | **目前没有 Linux 安装包** |
@@ -18,8 +18,9 @@ Windows 不确定架构：打开“设置 → 系统 → 关于 → 系统类型
 
 ## 本版更新
 
-- 修复 Firefox 跨站导航后深浅色配置丢失：使用内核原生内容主题，覆盖新页面和导航替换的浏览上下文。
-- 深色、浅色、原生重置，新页面与跨站导航共 18 次检查通过；CA/US 网站复测通过。
-- 保留 0.1.10 的 Chromium 显示偏好、英文 Windows 字体名单、随机保留名单和代理轮换检查。
-- 完整阅读检测页修复建议，并作不挂应用代理、临时 RTT 属性及 Firefox resistFingerprinting 对照。真实网络延迟、供应商出口轮换和硬件限制不能以改页面数字解决，详见验证报告。
-- Windows ARM64/x64；82 项测试及生产构建通过，在线更新保留环境数据。浏览器内核按需下载。
+- 新环境默认直连，Chromium/Firefox 启动显式关闭继承的系统代理；需要代理时在创建页粘贴整条信息即可。
+- 修复 hostname:port:username:password 中密码含 @ 时自动解析失败；五种格式与 URL 继续支持，歧义不静默猜测。
+- 一键/批量随机默认“一致性优先”：真实内核品牌、原生 GPU、无触摸电脑布局，默认保留原生 Canvas/音频；手选策略仍保留。硬件组合模式继续可选。
+- CA/US 推荐模式启动自动匹配语言、时区及英文 Windows 字体名单；已有环境配置保留，关闭自动匹配后使用手动参数。诊断附带实际启动配置。
+- BrowserLeaks、Sannysoft、CreepJS 实际测试及直连 DNS 对照。用户代理有多国 DNS、TCP 系统特征和轮换出口问题，未宣称安全或全部满分。
+- 91 项测试、生产构建、环境/随机/代理/Cookie/扩展及两引擎身份回归通过。Windows ARM64/x64，内核按需下载，在线更新保留数据。
