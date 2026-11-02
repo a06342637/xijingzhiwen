@@ -10,7 +10,8 @@
 - iPhone 375×667/DPR2 代表模拟通过本地观测与响应布局；不是真实 Safari/WebKit。英文 Windows 字体限制曾导致总览中文方框，补本地开源 OFL 字体后截图复查显示正常；外站字体配置不变。
 - 隔离软件 smoke 通过设置默认开启、关闭/恢复、第三方访问说明以及 Chromium 启停、Cookie/localStorage 持久、下载、扩展和认证 HTTP 代理实际请求。证据 `.verification/dashboard-manager-013/`、`.verification/dashboard-manager-final-013/`、`.verification/dashboard-013/`。
 - US Firefox 首次启动出现 GeoIP 网络失败，按原有不直连回退策略中止；重试成功。站点超时、结构变化或挑战页使用未完成/受限/错误，不自动绕过。
-- x64 原生宿主浏览器指纹、真实移动设备和 macOS/Linux 原生安装仍未在本轮验收。双架构安装版资源/UI及在线下载以发布流程结果为准，未提前声称成功。
+- GitHub Actions Run 41495041705 双架构原生 runner 的 95 项测试、构建/打包、安装版汇总页/字体及设置开关 smoke、完整附件摘要核对与公开发布均通过。v0.1.13 已公开，真实 Electron updater 分别从 GitHub 下载 ARM64/x64 安装包并通过 SHA-512 校验；证据 `.verification/github-update/result.json`。本轮不重复实际覆盖安装迁移链路。
+- x64 原生宿主浏览器指纹、真实移动设备和 macOS/Linux 原生安装仍未在本轮验收。ARM64 本机运行的两种浏览器与双架构安装版检查范围分别记录，不作扩大。
 
 # 2026-11-02 日本固定会话代理专项测试
 
