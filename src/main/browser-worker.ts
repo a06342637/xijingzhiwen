@@ -1,8 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import http from 'node:http';
+import {diagnosticPage} from './diagnostic-page';
 import {buildOptions,proxyUrl} from '../shared/config';
-import {PROBE} from './probe';
 import {launchFirefox} from './firefox';
 import {firefoxCookies} from './firefox-cookies';
 import {mobileUA,mobileIdentity} from '../shared/devices';
@@ -16,10 +15,9 @@ function safeError(error:unknown){let msg=error instanceof Error?error.message:S
 async function sdk(){return import('@xiaoxiaofeihh/chromix');}
 async function diagnostic(){
  if(!context)throw new Error('环境未运行');
- let headers:any={},resolveResult:(o:any)=>void=()=>{};const result=new Promise<any>(resolve=>{resolveResult=resolve;});
- const server=http.createServer((req,res)=>{if(req.method==='POST'&&req.url==='/result'){let data='',bytes=0;req.on('data',chunk=>{bytes+=chunk.length;if(bytes>2*1024**2){req.destroy();return;}data+=chunk;});req.on('end',()=>{try{resolveResult(JSON.parse(data));res.end('ok');}catch{res.writeHead(400).end();}});return;}if(req.url!=='/'){res.writeHead(404).end();return;}headers=req.headers;res.setHeader('Content-Type','text/html;charset=utf-8');res.end('<!doctype html><html><head><title>栖境 · 本地环境检查</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font:16px Segoe UI;padding:40px"><h2>正在检查当前环境</h2><p>检查结束后本页面会自动关闭。</p><script>'+PROBE+'.then(result=>fetch("/result",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(result)}));</script></body></html>');});
- let page:any,reused=false,timer:NodeJS.Timeout|undefined;
- try{await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});const address=server.address() as any;page=context.pages().find((p:any)=>p.url()==='about:blank');reused=Boolean(page);page??=await context.newPage();await pageReady.get(page);await page.goto(`http://127.0.0.1:${address.port}`,{waitUntil:'load',timeout:20000});const observation=await Promise.race([result,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('诊断超时，部分 API 可能受实验设置影响')),35000);})]);return {observation,headers,resolvedGeo,version:context.browser()?.version?.(),headless:false};}finally{if(timer)clearTimeout(timer);if(reused)await page?.goto('about:blank').catch(()=>{});else await page?.close().catch(()=>{});server.closeAllConnections();if(server.listening)await new Promise<void>(r=>server.close(()=>r()));}
+ const local=await diagnosticPage();let page:any,reused=false,timer:NodeJS.Timeout|undefined;
+ try{page=context.pages().find((p:any)=>p.url()==='about:blank');reused=Boolean(page);page??=await context.newPage();await pageReady.get(page);await page.goto(local.url,{waitUntil:'load',timeout:15000});const observation=await Promise.race([local.result,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('诊断超时，部分 API 可能受实验设置影响')),25000);})]);return {observation,headers:local.headers(),resolvedGeo,version:context.browser()?.version?.(),headless:false};}
+ finally{if(timer)clearTimeout(timer);if(page?.url()===local.url){if(reused)await page.goto('about:blank',{timeout:5000}).catch(()=>{});else await page.close().catch(()=>{});}await local.close();}
 }
 async function start(payload:any){
  profile=payload.profile;kernel=payload.kernel;initial=payload;secretValues=[payload.proxy?.password,payload.proxy?.username].filter(Boolean);

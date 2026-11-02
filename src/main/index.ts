@@ -73,7 +73,7 @@ const handlers:Record<string,(p:any)=>Promise<any>>={
  'components.install':async()=>({python:await components.ensure()}),
  'report.export':async p=>{const report=store.get<Report>('report',stringId(p));const r=await dialog.showSaveDialog(window!,{defaultPath:'Qijing-report-'+report.id+'.json',filters:[{name:'环境验证报告',extensions:['json']}]});if(!r.canceled&&r.filePath){await fs.writeFile(r.filePath,JSON.stringify(report,null,2));return true;}return false;},
  'report.open':async p=>{const report=store.get<Report>('report',stringId(p));return shell.openPath(report.outputDir||path.join(store.root,'reports'));},
- 'settings.save':async p=>{const settings=validateSettingsPatch(p,store.settings());const saved=store.put('settings','app',settings);nativeTheme.themeSource=settings.theme;return saved;},
+ 'settings.save':async p=>{if(process.env.QIJING_SMOKE&&process.env.QIJING_SMOKE_RELIABILITY_UI==='1')await new Promise(r=>setTimeout(r,500));const settings=validateSettingsPatch(p,store.settings());const saved=store.put('settings','app',settings);nativeTheme.themeSource=settings.theme;return saved;},
  'settings.data':async()=>shell.openPath(store.root),
  'settings.recycle':async()=>shell.openPath(path.join(store.root,'trash')),
  'settings.update':async()=>softwareUpdates.check(),

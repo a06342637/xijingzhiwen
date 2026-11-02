@@ -24,8 +24,13 @@ export async function acquireProfileLock(directory:string){
 
 export async function copyProfile(source:string,target:string){
  const skipped=new Set(['.qijing-profile-lock','SingletonLock','SingletonSocket','SingletonCookie']);
- const stat=await fs.stat(source).catch((e:any)=>{if(e.code==='ENOENT')return null;throw e;});
- if(!stat){await fs.mkdir(target,{recursive:true});return;}
- if(!stat.isDirectory())throw new Error('浏览器数据目录无效');
- try{await fs.cp(source,target,{recursive:true,errorOnExist:true,force:false,filter:async(file)=>{if(skipped.has(path.basename(file)))return false;const s=await fs.lstat(file);if(s.isSymbolicLink())throw new Error('浏览器数据含链接，不能安全创建升级副本');return true;}});}catch(error){await fs.rm(target,{recursive:true,force:true});throw new Error('复制浏览器数据失败，未创建可启动的副本',{cause:error});}
+ const relative=path.relative(path.resolve(source),path.resolve(target));
+ if(relative===''||(!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative)))throw new Error('复制目标不能位于原环境目录中');
+ const stat=await fs.lstat(source).catch((e:any)=>{if(e.code==='ENOENT')return null;throw e;});
+ if(stat&&(!stat.isDirectory()||stat.isSymbolicLink()))throw new Error('浏览器数据目录无效');
+ await fs.mkdir(path.dirname(target),{recursive:true});
+ // Reserve a new directory before copying. Cleanup may only remove this call's target.
+ await fs.mkdir(target);
+ if(!stat)return;
+ try{for(const name of await fs.readdir(source)){if(skipped.has(name))continue;await fs.cp(path.join(source,name),path.join(target,name),{recursive:true,errorOnExist:true,force:false,filter:async(file)=>{if(skipped.has(path.basename(file)))return false;const s=await fs.lstat(file);if(s.isSymbolicLink())throw new Error('浏览器数据含链接，不能安全创建升级副本');return true;}});}}catch(error){await fs.rm(target,{recursive:true,force:true});throw new Error('复制浏览器数据失败，未创建可启动的副本',{cause:error});}
 }

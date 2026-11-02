@@ -46,12 +46,15 @@ export function compatibleHardware(v:Values){return HARDWARE_PRESETS.filter(p=>h
 export function hardwareCompatible(p:HardwarePreset,os:string){const c=CPUS.find(x=>x.id===p.cpu),g=GPUS.find(x=>x.id===p.gpu);if(!c||!g||!c.systems.includes(os as HardwareOS)||!g.systems.includes(os as HardwareOS))return false;if(c.vendor==='Apple'||g.vendor==='Apple')return c.id===g.id;if(['uhd-630','uhd-730','uhd-770','iris-xe','arc-graphics','arc-140v'].includes(g.id)&&c.vendor!=='Intel')return false;if(['vega-7','radeon-780m','radeon-890m'].includes(g.id)&&c.vendor!=='AMD')return false;return true;}
 export function applyHardware(v:Values,p:HardwarePreset):Values{
  if(v.deviceType!=='desktop'||!hardwareCompatible(p,String(v.platform)))throw new Error('硬件组合不适用于当前系统或移动模式');
+ if(!Number.isInteger(p.ram)||p.ram<4||p.ram>256)throw new Error('组合内存记录应为 4–256 GB 整数');
  const c=CPUS.find(x=>x.id===p.cpu)!,g=GPUS.find(x=>x.id===p.gpu)!;
- return {...v,cpuModel:c.id,gpuModel:g.id,hardwareRam:p.ram,cpu:c.threads,memory:v.engine==='firefox'?'8':String(Math.min(8,p.ram)),identityMode:'seeded',gpuBackend:'compatibility',...gpuIdentity(g,String(v.engine),String(v.platform))};
+ const memory=p.ram<8?'4':'8';
+ return {...v,cpuModel:c.id,gpuModel:g.id,hardwareRam:p.ram,cpu:c.threads,memory:v.engine==='firefox'?'8':memory,identityMode:'seeded',gpuBackend:'compatibility',...gpuIdentity(g,String(v.engine),String(v.platform))};
 }
 export function selectedHardware(v:Values){const p=HARDWARE_PRESETS.find(p=>p.cpu===v.cpuModel&&p.gpu===v.gpuModel&&p.ram===v.hardwareRam);if(!p||v.deviceType!=='desktop'||!hardwareCompatible(p,String(v.platform)))return '';const applied=applyHardware(v,p);return ['cpu','memory','gpuBackend','gpuVendor','gpuRenderer'].every(k=>v[k]===applied[k])?p.id:'';}
 export function selectHardware(v:Values,change:{cpu?:string;gpu?:string;ram?:number}):Values{
  const os=String(v.platform),ram=change.ram??Number(v.hardwareRam);
+ if(!Number.isInteger(ram)||ram<4||ram>256)throw new Error('组合内存记录应为 4–256 GB 整数');
  let cpuId=change.cpu??String(v.cpuModel),gpuId=change.gpu??String(v.gpuModel);
  if(change.cpu==='')return {...v,cpuModel:''};
  if(change.gpu==='')return {...v,gpuModel:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:''};

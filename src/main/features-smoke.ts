@@ -16,7 +16,7 @@ export async function featureSmoke(window:BrowserWindow,output:string){
  await click('语言 / 时区','.advanced-nav button');
  await fill('#setting-locale','ja-JP');await fill('#setting-timezone','Asia/Tokyo');
  await click('实验设置','.defaults-panel .editor-tabs button');await js("(()=>{const input=document.querySelector('#setting-fakeShadowRoot');if(!input.checked)input.click();})()");await wait();await screenshot('settings-experimental.png');
- await click('保存默认指纹');
+ await click('保存默认指纹');await js("new Promise((resolve,reject)=>{const start=Date.now();function check(){if(!document.querySelector('.defaults-panel fieldset')?.disabled)return resolve();if(Date.now()-start>10000)return reject(new Error('Defaults save did not complete'));setTimeout(check,50);}check();})");
  let state=await js<AppState>("window.qijing.invoke('state')");assert.equal(state.settings.fingerprintDefaults.locale,'ja-JP');assert.equal(state.settings.fingerprintDefaults.fakeShadowRoot,true);
  await click('高级配置','.defaults-panel .editor-tabs button');await click('语言 / 时区','.advanced-nav button');await screenshot('settings-defaults.png');
  await click('浏览器环境','.nav-item');await click('新建环境','.page-header button');
