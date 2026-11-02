@@ -50,3 +50,29 @@ export function applyHardware(v:Values,p:HardwarePreset):Values{
  return {...v,cpuModel:c.id,gpuModel:g.id,hardwareRam:p.ram,cpu:c.threads,memory:v.engine==='firefox'?'8':String(Math.min(8,p.ram)),identityMode:'seeded',gpuBackend:'compatibility',...gpuIdentity(g,String(v.engine),String(v.platform))};
 }
 export function selectedHardware(v:Values){const p=HARDWARE_PRESETS.find(p=>p.cpu===v.cpuModel&&p.gpu===v.gpuModel&&p.ram===v.hardwareRam);if(!p||v.deviceType!=='desktop'||!hardwareCompatible(p,String(v.platform)))return '';const applied=applyHardware(v,p);return ['cpu','memory','gpuBackend','gpuVendor','gpuRenderer'].every(k=>v[k]===applied[k])?p.id:'';}
+export function selectHardware(v:Values,change:{cpu?:string;gpu?:string;ram?:number}):Values{
+ const os=String(v.platform),ram=change.ram??Number(v.hardwareRam);
+ let cpuId=change.cpu??String(v.cpuModel),gpuId=change.gpu??String(v.gpuModel);
+ if(change.cpu==='')return {...v,cpuModel:''};
+ if(change.gpu==='')return {...v,gpuModel:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:''};
+ let c=CPUS.find(c=>c.id===cpuId),g=GPUS.find(g=>g.id===gpuId);
+ if(change.cpu&&c&&c.vendor!=='Apple'&&!g)return {...v,cpuModel:c.id,cpu:c.threads,hardwareRam:ram};
+ if(change.cpu&&c?.vendor==='Apple')gpuId=c.id;
+ if(change.gpu&&g?.vendor==='Apple')cpuId=g.id;
+ if(!hardwareCompatible({id:'custom',cpu:cpuId,gpu:gpuId,ram},os)){
+  // Keep the explicitly selected side. Replace only the incompatible partner.
+  if(change.cpu){const partner=GPUS.find(g=>hardwareCompatible({id:'custom',cpu:cpuId,gpu:g.id,ram},os));if(!partner)throw new Error('此 CPU 没有当前系统的兼容显卡');gpuId=partner.id;}
+  else if(change.gpu){const partner=CPUS.find(c=>hardwareCompatible({id:'custom',cpu:c.id,gpu:gpuId,ram},os));if(!partner)throw new Error('此显卡没有当前系统的兼容 CPU');cpuId=partner.id;}
+  else return {...v,hardwareRam:ram};
+ }
+ c=CPUS.find(c=>c.id===cpuId);g=GPUS.find(g=>g.id===gpuId);
+ if(!c||!g)return {...v,hardwareRam:ram};
+ return applyHardware(v,{id:'custom',cpu:cpuId,gpu:gpuId,ram});
+}
+export function editFingerprint(v:Values,key:string,value:string|number|boolean):Values{
+ const next={...v,[key]:value};
+ if(key==='platform'&&value!==v.platform&&(v.cpuModel||v.gpuModel))return {...next,cpuModel:'',gpuModel:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:''};
+ if(key==='cpu'&&value!==v.cpu)next.cpuModel='';
+ if(['gpuVendor','gpuRenderer','gpuBackend'].includes(key)&&value!==v[key])next.gpuModel='';
+ return next;
+}

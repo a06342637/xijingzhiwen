@@ -28,6 +28,13 @@ export async function verifyHardwareUI(window:BrowserWindow,store:Store){
   const preset=HARDWARE_PRESETS.find(p=>p.gpu==='rx-9070xt')!,cpu=CPUS.find(c=>c.id===preset.cpu)!,gpu=GPUS.find(g=>g.id===preset.gpu)!;
   await js(`(()=>{const s=document.querySelector('[aria-label="整机组合预设"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,${JSON.stringify(preset.id)});s.dispatchEvent(new Event('change',{bubbles:true}));})()`);await wait();
   assert.equal(await js(`document.querySelector('[aria-label="CPU 型号记录"]').value`),cpu.id);assert.equal(await js(`document.querySelector('[aria-label="显卡型号记录"]').value`),gpu.id);assert.ok((await js(`document.querySelector('.hardware-result').innerText`)).includes(String(cpu.threads)));await fs.writeFile(path.resolve(process.env.QIJING_SMOKE_OUTPUT||'.verification','hardware-picker.png'),(await window.webContents.capturePage()).toPNG());
-  await js(`document.querySelector('[aria-label="关闭对话框"]').click()`);return [{name:'整机组合 UI 联动 CPU / GPU / 线程与原生能力说明',passed:true}];
+  const select=async(label:string,value:string)=>{await js(`(()=>{const s=document.querySelector('[aria-label="${label}"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,${JSON.stringify(value)});s.dispatchEvent(new Event('change',{bubbles:true}));})()`);await wait();};
+  await select('整机组合预设',HARDWARE_PRESETS.find(p=>p.cpu==='i3-12100')!.id);
+  await select('CPU 型号记录','r9-9950x');assert.equal(await js(`document.querySelector('[aria-label="CPU 型号记录"]').value`),'r9-9950x');assert.notEqual(await js(`document.querySelector('[aria-label="显卡型号记录"]').value`),'uhd-730');
+  await select('组合内存记录','48');assert.equal(await js(`document.querySelector('[aria-label="整机组合预设"]').value`),'custom');
+  await js(`Array.from(document.querySelectorAll('.modal .editor-tabs button')).find(b=>b.textContent==='高级配置').click()`);await wait();await js(`Array.from(document.querySelectorAll('.modal .advanced-nav button')).find(b=>b.textContent.includes('硬件')).click()`);await wait();
+  await js(`(()=>{const i=document.querySelector('#setting-cpu');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'4');i.dispatchEvent(new Event('input',{bubbles:true}));})()`);await wait();
+  await js(`Array.from(document.querySelectorAll('.modal .editor-tabs button')).find(b=>b.textContent==='基础设置').click()`);await wait();assert.equal(await js(`document.querySelector('[aria-label="CPU 型号记录"]').value`),'');
+  await js(`document.querySelector('[aria-label="关闭对话框"]').click()`);return [{name:'硬件 UI 联动 / 更换 CPU 保留选择 / 自定义组合显示 / 手动线程清除型号记录',passed:true}];
  }finally{await js(`window.qijing.invoke('settings.save',${JSON.stringify({fingerprintDefaults:original.fingerprintDefaults})})`);}
 }

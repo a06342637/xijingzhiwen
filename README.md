@@ -1,98 +1,97 @@
 # 栖境 Qijing
 
-Windows 多环境浏览器管理软件。管理界面使用 Electron / React / TypeScript，网页使用独立的 Chromix 或 Firefox / Camoufox 浏览器。支持 Windows ARM64 和 x64。
+Windows 多环境浏览器管理软件。管理界面使用 Electron / React / TypeScript，网页在独立的 Chromix（Chromium）或 Camoufox（Firefox）中打开。本地单用户使用，不包含网站自动化、脚本任务、定时任务或 AI 操作。
 
-## 使用
+[下载最新版本](https://github.com/a06342637/xijingzhiwen/releases/latest) · [验证报告](VERIFICATION.md) · [修复记录](BUGFIXES.md) · [第三方许可证](THIRD_PARTY_NOTICES.md)
 
-1. 安装对应架构的 `Qijing-0.1.6-arm64-Setup.exe` 或 `Qijing-0.1.6-x64-Setup.exe`。
-2. 在“内核管理”下载或导入 Chromix。候选基线为 `155.0.8059.79`，下载验证 SHA-256、PE 架构和许可证目录。
-3. 点击“新建环境”，选择内核、代理及高级配置，保存后启动。登录、浏览、下载由用户自己操作。
-4. 菜单中可复制配置、归档、打开下载目录、迁移加密 Cookie、检查环境。复制配置生成新种子，不复制登录数据。
+## 安装与开始使用
 
-软件安装包不包含 Chromix 或 Python 运行环境；首次使用时下载。没有账号、云同步、脚本任务、定时任务、流程编辑器或 AI 操作入口。
+1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.7-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.7-x64-Setup.exe`。未配置代码签名证书。
+2. 在“内核管理”下载 Chromix 或 Firefox / Camoufox，或导入完整本地内核目录中的可执行文件。软件安装包不包含浏览器内核；诊断 Python 组件也按需下载。
+3. 新建环境，选择引擎、系统/设备、内核、硬件参数与代理，保存后点击“启动环境”。网页由用户自己操作。
+4. 每个环境有独立数据目录和登录数据。配置修改关闭后保存，重新启动生效。复制只复制配置，生成新种子，不复制 Cookie 或本地存储。
 
-## 已实现
+Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camoufox 测试版）。下载核对 SHA-256、Windows PE 架构和许可证文件；没有校验信息不启用。软件与内核分开更新，环境固定绑定具体内核版本。
 
-- SQLite 环境保存，分组、标签、备注、搜索、卡片和列表视图，批量启停，独立浏览器数据目录和进程锁。
-- Windows 系统加密保存代理密码；HTTP / HTTPS / SOCKS5 代理，认证、绕过规则和出口元数据测试。
-- 统一登记并校验 UA / Client Hints、WebRTC、WebGL 名称、像素策略、音频、字体、编解码、显示、输入偏好、配额、Cookie、实验参数。
-- 本地扩展副本管理；加密 Cookie 导入导出；环境专属下载目录。
-- 内核版本固定、更新检查、校验下载、本地内核导入及升级数据副本。
-- 按需下载带固定摘要的 Python / Playwright / Pillow 诊断组件；上游设备采集与记录校验、实测模式启动。
-- 环境观测及内核图形对照，结果标记已验证、受限、未验证、不支持，并可导出 JSON。
+## 功能
 
-## 验证边界
+| 模块 | 当前范围 |
+| --- | --- |
+| 环境 | 新建、编辑、复制、分组、标签、备注、搜索、归档；卡片/列表、批量创建与启停、重复启动拦截 |
+| 浏览器 | 独立进程与数据目录，启动/关闭/进入，多个启动页面、环境下载目录 |
+| 登录数据 | Cookie/localStorage 持久化，加密 Cookie 导入导出；同引擎迁移优先，不能复制数据库保证跨机登录 |
+| 代理 | HTTP、HTTPS、SOCKS5，认证、绕过、出口测试、粘贴自动解析；密码用 Windows 系统加密保存 |
+| 配置 | UA、系统、WebRTC、WebGL 名称、CPU 逻辑线程数、屏幕/DPR、语言/时区、输入偏好、字体/媒体/存储及实验参数；按内核限制启用 |
+| 硬件 | 50 个 CPU、63 个 GPU 型号、49 套组合；搜索、显卡品牌筛选、单选、内存记录，一键/批量随机 |
+| 内核/诊断 | 校验下载、本地导入、绑定版本、升级验证副本、上游设备记录、环境观察和 JSON 报告 |
+| 软件更新 | GitHub Releases 双架构清单，自动检查下载、手动安装并重启，升级保留数据 |
 
-“已验证”只代表具体报告中的操作或字段在该内核、运行模式和机器上通过。单次环境检查不证明所有噪声路径、代理网络出口、站点检测结果或物理设备等价性。原生 GPU 不可用时保留报告缺项，不强行绕过 GPU blocklist。
+## 引擎、系统与设备边界
 
-本机为 Windows ARM64。ARM64 原生浏览器启停、并发重复启动拦截、Cookie / localStorage 持久化、Cookie 加密迁移、下载保存、MV3 扩展加载、HTTP 代理认证已有真实运行测试。Canvas 的上游固定种子诊断通过；本机 WebGL / WebGPU 上下文不可用，相关验收保留未验证或受限。x64 软件可在本机仿真测试，仍需 x64 原生机器验收。
+| 环境 | 支持方式与限制 |
+| --- | --- |
+| Windows 软件 | 提供 ARM64/x64 安装包；无 macOS/Linux 原生安装包 |
+| Windows/macOS/Linux 电脑身份 | 两种引擎中的展示预设，不替换真实宿主系统、字体栅格器或硬件 |
+| Firefox | Camoufox Windows 仅 x64，ARM64 电脑使用兼容运行；不接入 Chromix 实测设备、Canvas 固定种子、音频隔离或 Chromium 扩展目录 |
+| iPhone/iPad/Android | Chromium 的布局、屏幕、方向、DPR、触摸、UA/Client Hints 模拟；不是真实 Safari/WebKit 或移动系统 |
+| 屏幕 | 13 组移动尺寸样本和 1366×768 至 5120×2880 电脑尺寸，包含 2K/4K/5K/超宽屏；CSS/DIP 单位，可自定义 |
 
-实测设备记录必须通过上游严格校验，匹配内核摘要、宿主、运行模式和时效；没有可用 GPU 等完整证据时采集可能失败。字体名单需要真实字体；Windows 不自动安装 fontsDir 的字体。Widevine 不随软件分发。Canvas Bridge 需要自备服务，并会影响相关 renderer 沙箱。SOCKS5 UDP、完整 ClientRects 噪声和跨机器原生 Cookie 数据库不属于上游已完成能力。
+只有部分特性在特定内核与硬件实测通过，不承诺所有网站识别、真机等价或防关联效果。诊断页只用于核对固定配置，不提供用户脚本执行入口。
 
-升级现有环境通过“创建验证副本”完成，原目录保留。删除环境把浏览器目录移至用户数据目录中的 `trash`；下载文件保留。整个浏览器 profile 跨机器复制不能保证登录可用；可使用显式加密 Cookie 迁移。
+## CPU / 显卡与一键随机
 
-安装包未配置代码签名证书。软件设置中的在线更新从本仓库 GitHub Releases 检查版本，按 ARM64 / x64 下载并校验，点击“安装并重启”完成更新。0.1.1 及更早版本需要手动安装新版本一次；0.1.2 可以在软件内更新。更新和覆盖安装保留环境数据；内核单独管理。主动卸载会清除软件数据目录（含环境、登录、内核、代理、配置、内置下载目录和回收目录）及更新缓存；用户自选的外部下载目录不属于软件数据目录。
+硬件选择在“新建环境”和“软件设置 → 新建环境的默认指纹”中。支持 NVIDIA GTX/RTX 20–50、AMD Radeon RX 500/6000/7000/9000、Intel UHD/Iris/Arc A/B、Ryzen、Core/Core Ultra、AMD 集显与 Apple M 的常见样本。不是全部市场型号清单，也不是完整原生设备采集。
 
-## 开发
+- CPU 名称仅在软件中记录；网页主要读取 `navigator.hardwareConcurrency` 的逻辑处理器数，不是物理核心数，也不改变指令集和真实性能。
+- 组合内存 16/32/64GB 等为记录，`deviceMemory` 为离散/限幅浏览器值（常见为 8）；火狐没有该 API。
+- 显卡配置修改 WebGL Vendor/Renderer 名称，不能替换真实显卡、驱动、算力、GL 扩展、像素或 WebGPU。原生软件渲染/不可用上下文可能不覆盖名称。
+- 组合按系统筛选，不随机现代 RTX 到 macOS，Intel/AMD 集显不跨 CPU 平台。单选 CPU/GPU 会保留本次选择，只调整不兼容的另一侧。
+- 硬件随机默认开启；一键/批量随机从当前系统组合中选择。关闭后保留手选硬件，移动模拟保持自身配置。
+- 手动修改线程数或 WebGL 参数会清除旧型号记录；自定义组合明确显示，不误标为原生 GPU。
 
-需要 Windows、Node.js 和 npm：
+手动 UA 可能与 Client Hints 不一致。切换引擎会清除上一引擎的手动 UA 和版本；已有环境不能直接跨引擎改写登录目录，请新建。
+
+## 代理与语言时区
+
+默认自动识别 `hostname:port:username:password`，也支持 `用户名:密码@主机:端口` 等五种格式及 HTTP/HTTPS/SOCKS5 URL。歧义格式需要选定格式后解析；协议不随凭据猜测，未带协议使用当前选定协议。
+
+新环境默认打开“按代理出口匹配语言与时区”：有代理时在启动前查询实际出口，覆盖手动语言和时区；关闭开关后使用手动值。直连不查询，查询失败中止启动；已有环境保留自己的配置。多时区国家依据启动时的出口城市，轮换代理后续 IP 变化可能导致不一致，建议供应商提供固定会话。
+
+代理默认限制非代理 UDP；Chromium 禁用 QUIC 并限制目的域名本地解析；Firefox 启用远端 SOCKS DNS、关闭预取和直连回退。本地诊断走回环。手动绕过和放宽 WebRTC 策略会改变路由限制。网关域名仍需由本机解析以建立连接。
+
+此前 CA 代理测试未出现同样的本机直连 DNS，STUN 检查未返回可见 ICE 地址；供应商 DNS 跨地区、出口轮换，不能保证加拿大 DNS、所有流量走代理或所有网站无泄露。WebRTC 地址展示也不等于通信路由。
+
+## 默认设置、更新与数据
+
+默认指纹只用于新建，已有环境保留自己的参数。每次批量最多 100 个环境，独立种子和目录；多个环境应留空下载路径使用各自目录。
+
+启动后默认检查 GitHub 并下载对应架构新版，SHA-512 通过后提示“安装并重启”。可关闭自动检查，手动点击“检查更新”。安装前正常关闭环境，准备期间出错取消此次安装；不会在用户工作中直接重启。0.1.1 及更早版本需手动安装一次。
+
+在线更新/覆盖安装保留配置与环境；主动卸载清除软件数据目录和更新缓存，用户自选外部下载目录不清除。删除单个环境会把浏览器目录移到数据目录 `trash`，下载文件保留。内核升级通过数据副本检查，原环境保留。
+
+日志位于数据目录 `logs/software-update.log`，不依赖终端。不要公开代理密码、Cookie、完整环境目录或个人诊断数据。
+
+## 验证与已知限制
+
+0.1.7 本轮：62 项测试、TypeScript/生产构建、硬件 UI、启动/停止/诊断竞争、会话、Cookie、下载、扩展和代理认证回归通过；具体证据与发布状态见 [VERIFICATION.md](VERIFICATION.md)。
+
+本机 Windows ARM64 的 Chromium 图形上下文受限，相关 WebGL/WebGPU 不标“已验证”，没有绕过 GPU blocklist。火狐代表组合 WebGL 1 名称曾实测匹配，但不证明完整 GPU 或像素能力一致。原生 x64 GPU 全量检查仍需对应硬件，不能用构建通过代替。
+
+实测设备记录遵守上游摘要、宿主、模式及时效校验。字体、媒体、Widevine、实验项受平台/内核限制；Widevine 不分发。Canvas Bridge 需要自备服务并可能影响沙箱。SOCKS5 UDP、完整 ClientRects 扰动、完整虚拟 GPU、跨机器原生 Cookie 数据库不属于当前交付能力。
+
+## 开发和发布
 
 ```powershell
 npm ci
 node node_modules/electron/install.js
+npm test
 npm run build
-npm run test
-npm start
+npm run smoke
 npm run pack
 ```
 
-默认 `npm run smoke` 使用独立测试数据目录，不修改正常用户环境。设置 `QIJING_SMOKE_BROWSER=1` 执行真实浏览器测试；`QIJING_SMOKE_FLOWS=1` 验证会话、Cookie、扩展、下载和代理认证；`QIJING_SMOKE_COMPONENTS=1` 验证组件下载和上游图形诊断。报告与截图位于 `.verification/`。
+`npm run smoke` 使用隔离测试数据。可设置 `QIJING_SMOKE_BROWSER=1`、`QIJING_SMOKE_FLOWS=1`、`QIJING_SMOKE_RACES=1`、`QIJING_SMOKE_HARDWARE_UI=1`、`QIJING_SMOKE_HARDWARE=1`、`QIJING_SMOKE_DEVICE_UI=1`；`QIJING_SMOKE_DEVICES=1` 配合 `QIJING_SMOKE_DEVICE_MATRIX=1` 验证 13 组设备横竖屏。报告/截图在 `.verification/`，不上传用户数据。
 
-上游源码固定提交与依赖摘要分别保存在 `resources/upstream.json` 和 `resources/components.json`。`scripts/lock-components.mjs` 是维护者更新下载清单的工具，不在用户安装时运行。许可证保留于安装资源及 `dist/licenses/`。
+源码目录 `C:\Users\adminuser\Downloads\xijingzhiwen`；产物目录相邻 `xijing发行版本/<版本号>`。上游固定提交与诊断组件摘要位于 `resources/upstream.json`、`resources/components.json`，第三方许可证保留在安装资源及 `dist/licenses/`。
 
-## 默认指纹与创建
-
-在软件设置中配置高级指纹与实验预设并保存，新建环境自动继承，已有环境不改变。新建支持 1–100 个环境，自动添加名称序号并生成独立种子与目录。一键随机会组合兼容的所选电脑系统硬件、屏幕、浏览器展示参数，并保留代理、语言、时区和实验选择；批量时可勾选每个环境分别随机。
-
-网络代理支持选择已保存节点、手动填写，或粘贴 `主机:端口:用户名:密码` 等五种格式（也支持 HTTP/HTTPS/SOCKS5 URL）。存在歧义时选择具体格式再解析。保存后凭据使用 Windows 加密保管。
-
-## 目录与发布
-
-项目目录：`C:\Users\adminuser\Downloads\xijingzhiwen`。`npm run pack` 将版本产物写入相邻的 `xijing发行版本/<版本号>/`，并生成 `latest.yml`（x64）、`latest-arm64.yml`（ARM64）与 SHA256SUMS。
-
-测试后执行 `node scripts/publish.mjs`，提交需已经推送到 main。该脚本先上传完整草稿 Release，确认附件后再公开。软件只读取公开 Releases，不需要用户配置 GitHub 凭据。
-
-## 在线更新与后续发布
-
-0.1.3 默认在启动后检查 GitHub 并后台下载新版，SHA-512 校验完成后提示“安装并重启”。可在软件设置中关闭自动检查下载，仍可手动检查。安装前保存并正常关闭浏览器环境；不在工作中突然重启。
-
-源码和 Releases 固定使用 https://github.com/a06342637/xijingzhiwen 。更新不会自动替换 Chromix 内核。
-
-后续版本：修改 `package.json` / `package-lock.json` 版本与 `scripts/release-notes.md`，提交并推送 main，再推送相同版本标签 `vX.Y.Z`（或手动运行 Build and publish Windows release）。GitHub Actions 在两种架构运行测试、构建、打包检查；附件完整且 SHA-256/SHA-512 正确后公开 Release。已公开版本不覆盖，修复使用新版本号。
-
-## 0.1.4 引擎和设备环境
-
-- Firefox 使用 Camoufox 158.0.1-beta.41（测试版），Windows 仅提供 x64 内核；ARM64 电脑通过 x64 兼容运行。内核按需下载，发行包约 1.32 GB，不进入软件安装包。支持原生 UA、系统展示、CPU、屏幕、语言、时区、WebRTC 地址及 WebGL 名称接入，实际能力见环境诊断。
-- Windows、macOS、Linux 是当前 Windows 软件中的电脑身份预设，不提供 macOS/Linux 安装包。
-- iPhone、iPad、Android 手机和平板为 Chromium 布局模拟，包含 CSS 屏幕尺寸、DPR、方向、视口、触摸和 UA；不是 Safari/WebKit 或真实移动系统，不能承诺真机指纹。
-- 电脑屏幕包含 1366×768 至 5120×2880、2K、4K、5K、超宽屏；移动设备提供 13 组尺寸样本，并可在高级配置自定义。尺寸为 CSS/DIP 单位。
-- 新环境默认开启代理出口匹配语言与时区；按实际出口覆盖手动值。直连不查询。关闭开关后使用手动设置；已有环境配置保留，旧软件默认预设的代理匹配开关迁移为开启。轮换代理会在不同连接换城市，启动时匹配无法保证后续时区一致，建议供应商提供固定会话。
-- 代理粘贴默认自动识别 hostname:port:username:password，密码用 Windows 加密保存。代理启用时限制非代理 UDP，禁用 QUIC，并限制 Chromium 本地目的域名解析；火狐启用远端 SOCKS DNS、禁用预取和直连回退。本地诊断地址走回环。绕过规则和主动选择原生 WebRTC 策略会放宽路由限制。
-- Firefox 不接入 Chromium 的固定种子 Canvas、音频隔离、实测设备和扩展目录；现版原生音频，固定配置重启保持。Cookie 加密迁移支持同引擎，含 Chromium 专属元数据的文件不能直接导入火狐。
-- QIJING_SMOKE_DEVICES=1 检查移动端视口/DPR/触摸与三种 Firefox 电脑身份、重启稳定性。
-
-## 0.1.5 维护检查
-
-更新日志保存到数据目录 logs/software-update.log，不再依赖终端。更新验证脚本日志保存于 .verification/github-update/updater.log。关闭终端后验证脚本不会因 EPIPE 弹窗。
-
-安卓型号在 UA 和 Client Hints 中一致，横屏/竖屏通过原生屏幕方向参数配置，编辑已有预设使用保存的方向。QIJING_SMOKE_DEVICE_MATRIX=1 与 QIJING_SMOKE_DEVICES=1 组合执行全部 13 组移动设备的横竖屏实测；QIJING_SMOKE_DEVICE_UI=1 检查预设显示与禁用控件。
-
-## 0.1.6 硬件组合
-
-新建环境和软件默认设置提供 CPU/显卡组合选择、搜索和品牌筛选。库含 50 个 CPU、63 个 GPU 型号、49 套搭配建议，按 Windows/macOS/Linux 筛选。NVIDIA GTX/RTX 20–50、AMD Radeon RX 500/6000/7000/9000、Intel UHD/Iris/Arc A/B、AMD 集显、Apple M 均有常见样本。不是市场全部型号清单，也不是采集的完整原生设备记录。
-
-CPU 标签仅软件内记录，hardwareConcurrency 按型号的逻辑线程设置；deviceMemory 是限幅/离散浏览器值（常见为 8），组合 16/32/64GB 等为配置记录。火狐无 deviceMemory API。WebGL 名称格式按引擎和系统变化；图形能力、字体、指令和 WebGPU 仍受真实机器限制。软件渲染或受限 GPU 上下文可能不覆盖名称，不能据此保证真实电脑等价性。
-
-硬件随机默认开启，一键或批量随机从当前系统组合选取；关闭后随机保留已选 CPU/内存/GPU。移动模拟不会混入电脑组合。配置保存后重启生效，查看环境诊断核对真实返回值。核数标签已改为逻辑线程数。
-
-型号参考：NVIDIA/AMD/Intel/Apple 官方产品资料；WebGL 字符串是平台格式模板，不是型号设备 ID、驱动或完整 GPU 参数库。QIJING_SMOKE_HARDWARE=1 检查选择联动、两种内核的硬件启动及实际返回限制。
+后续更新修改版本号、release notes、README 和验证报告，提交 main 并推送 `vX.Y.Z`。GitHub Actions 分别构建/检查 ARM64 与 x64，生成独立 `latest-arm64.yml` / `latest.yml`；`scripts/publish.mjs` 完整上传校验草稿后公开，不覆盖已发布二进制。

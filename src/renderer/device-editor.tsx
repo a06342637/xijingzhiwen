@@ -3,7 +3,7 @@ import {CPUS,GPUS,gpuIdentity} from '../shared/hardware';
 import {defaultValues,type Values} from '../shared/model';
 import {DEVICES,SCREEN_PRESETS,ENGINE_NAMES,applyDevice,applyScreen,fieldSupported,applyDesktop,devicePreset} from '../shared/devices';
 export function changeEngine(values:Values,engine:string){
- const defaults=defaultValues(),next:Values={...(values.deviceType==='desktop'?values:applyDesktop(values,String(values.platform))),engine,deviceType:'desktop',brand:engine==='firefox'?'Firefox':'Chrome'};
+ const defaults=defaultValues(),next:Values={...(values.deviceType==='desktop'?values:applyDesktop(values,String(values.platform))),engine,deviceType:'desktop',brand:engine==='firefox'?'Firefox':'Chrome',brandVersion:'',userAgent:''};
  if(engine==='firefox')for(const key of Object.keys(next))if(!fieldSupported(key,next))next[key]=defaults[key];
  const gpu=GPUS.find(g=>g.id===next.gpuModel);if(gpu)Object.assign(next,gpuIdentity(gpu,engine,String(next.platform)));return next;
 }
