@@ -11,6 +11,15 @@ Windows 多环境浏览器管理软件。管理界面使用 Electron / React / T
 3. 新建环境，选择引擎、系统/设备、内核、硬件参数与代理，保存后点击“启动环境”。网页由用户自己操作。
 4. 每个环境有独立数据目录和登录数据。配置修改关闭后保存，重新启动生效。复制只复制配置，生成新种子，不复制 Cookie 或本地存储。
 
+| 电脑类型 | 安装包选择 |
+| --- | --- |
+| Intel/AMD 处理器的 Windows 10/11 电脑 | `Qijing-0.1.10-x64-Setup.exe` |
+| 骁龙等 ARM 处理器的 Windows 10/11 电脑 | `Qijing-0.1.10-arm64-Setup.exe` |
+| Apple M 系列或 Intel 芯片的 Mac，运行 macOS | 暂无 macOS 安装包，不能安装 Windows `.exe` |
+| Linux 电脑 | 暂无 Linux 安装包 |
+
+Windows 可在“设置 → 系统 → 关于 → 系统类型”查看：基于 x64 的处理器选 x64，基于 ARM 的处理器选 ARM64。Apple 芯片属于 ARM，但 Windows ARM64 包不能用于 macOS。软件内的 macOS/Linux 选项仅模拟浏览器身份。普通用户只下载 `Setup.exe`，`.yml`、`.blockmap` 和校验清单不用安装。
+
 Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camoufox 测试版）。下载核对 SHA-256、Windows PE 架构和许可证文件；没有校验信息不启用。软件与内核分开更新，环境固定绑定具体内核版本。
 
 ## 功能

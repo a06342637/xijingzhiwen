@@ -12,7 +12,8 @@
 - ARM 宿主的 ARM64/x64 Chromix 都实际返回 Client Hints architecture=arm；不能把 Intel/AMD 名称记录宣称 x86 真机。当前宿主 WebGL/WebGPU 不可用，保留真实限制，没有绕过 GPU blocklist 或模拟完整 GPU。诊断添加架构实际值与提示。
 - 81 项测试、TypeScript/生产构建通过。隔离桌面 smoke 的设置保存、字体按钮、代理粘贴、随机/批量创建、Chromium 启停/诊断、Chrome/Firefox 三种桌面系统身份及 iPhone/iPad/Android 代表环境通过；不等于 macOS/Linux 原生软件验收。
 - 最终 0.1.10 界面复验：新建环境选择英文字体名单再一键随机，名单保留，批量创建通过。真实 Browsers → worker → SDK 的 CA/US 出口测试均返回轮换/时区提示，结束后 worker 清理；证据 `region-final-smoke/smoke.json` 和 `region-audit/worker-proxy-real.json`。
-- 当前修复进入 0.1.10；双架构发布与下载结果完成后补充。此前 0.1.9 公共二进制不替换。
+- GitHub Actions Run 41445010319：ARM64/x64 原生构建、81 项测试、安装包启动、完整摘要和发布全部通过。v0.1.10 已公开；真实 NsisUpdater 分架构下载并通过 SHA-512（`.verification/github-update/result.json`）。本轮未再次执行安装迁移链路，沿用前次 0.1.9 在线安装实测证据。测试结束无遗留浏览器/updater 进程。
+- v0.1.10 和截图中的 v0.1.9 公开版本简介已增加电脑/安装包对照：Windows Intel/AMD 选 x64，Windows 骁龙等 ARM 选 ARM64；Apple M/Intel Mac 与 Linux 均无原生安装包，软件内系统选择只是浏览器身份模拟。只修改简介，不替换已公开二进制。README 和后续 release-notes 模板同步。
 
 # 栖境 0.1.9 可靠性深入检查
 
