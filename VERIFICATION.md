@@ -11,7 +11,8 @@
 - 默认生成不绑定代理，Chromium 显式 no-proxy-server / Firefox network.proxy.type=0。需要时创建页一次粘贴；自动解析新增密码含 @/冒号组合覆盖。推荐 CA/US 自动匹配同步使用真实英文字体名单，保留手动名单、匹配关闭与已有配置。effectiveValues 附在诊断中，不写回用户保存配置。
 - 试验 Firefox DoH-only：初次代理网关无法解析；排除网关本地域名解析后可访问，DNS 测试仍返回约 70 个多国解析器。未把未解决问题的设置接入默认；没有直连回退、改系统 DNS 或关闭网络安全限制。证据 `.verification/multi-site-012-doh*`。
 - 91 项测试与 TypeScript/生产构建通过；隔离 smoke 的默认直连选项/推荐策略、代理粘贴、默认预设/随机/批量、真实 Chromium 启停、Cookie/localStorage、下载、扩展、HTTP 认证代理，以及两引擎三种桌面身份、iPhone/iPad/Android 代表模式通过。证据 `.verification/random-consistent-012/smoke.json`。新字段对旧普通/实测模式兼容，旧环境不自动改为推荐模式。
-- 0.1.12 发布结果完成后补充。软件默认策略强调一致性和兼容；无法以有限页面验收证明匿名、安全或所有网站满分。
+- GitHub Actions Run 41455064875：ARM64/x64 原生构建、91 项测试、安装版启动、完整附件校验与发布通过。v0.1.12 已公开；真实 updater 分架构下载并通过 SHA-512（`.verification/github-update/result.json`）。测试结束无遗留浏览器/updater 进程，用户代理凭据不入仓库。本轮没有重复实际安装迁移链路，不扩展旧安装证据的版本范围。
+- 软件默认策略强调一致性和兼容；无法以有限页面验收证明匿名、安全或所有网站满分。
 
 # 栖境 0.1.11 检测站建议复查与 Firefox 主题修复
 
