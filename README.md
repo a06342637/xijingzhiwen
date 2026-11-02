@@ -6,15 +6,15 @@ Windows 多环境浏览器管理软件。管理界面使用 Electron / React / T
 
 ## 安装与开始使用
 
-1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.10-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.10-x64-Setup.exe`。未配置代码签名证书。
+1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.11-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.11-x64-Setup.exe`。未配置代码签名证书。
 2. 在“内核管理”下载 Chromix 或 Firefox / Camoufox，或导入完整本地内核目录中的可执行文件。软件安装包不包含浏览器内核；诊断 Python 组件也按需下载。
 3. 新建环境，选择引擎、系统/设备、内核、硬件参数与代理，保存后点击“启动环境”。网页由用户自己操作。
 4. 每个环境有独立数据目录和登录数据。配置修改关闭后保存，重新启动生效。复制只复制配置，生成新种子，不复制 Cookie 或本地存储。
 
 | 电脑类型 | 安装包选择 |
 | --- | --- |
-| Intel/AMD 处理器的 Windows 10/11 电脑 | `Qijing-0.1.10-x64-Setup.exe` |
-| 骁龙等 ARM 处理器的 Windows 10/11 电脑 | `Qijing-0.1.10-arm64-Setup.exe` |
+| Intel/AMD 处理器的 Windows 10/11 电脑 | `Qijing-0.1.11-x64-Setup.exe` |
+| 骁龙等 ARM 处理器的 Windows 10/11 电脑 | `Qijing-0.1.11-arm64-Setup.exe` |
 | Apple M 系列或 Intel 芯片的 Mac，运行 macOS | 暂无 macOS 安装包，不能安装 Windows `.exe` |
 | Linux 电脑 | 暂无 Linux 安装包 |
 
@@ -75,6 +75,8 @@ Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camouf
 
 英文 CA/US 电脑可在“高级配置 → 字体 / 存储”点击“使用英文 Windows 字体名单”。只限制真实字体族，不修改系统；中文及其他文字回退可能受限，可手动编辑或恢复原生。随机保留所选字体策略和名单。实测后 US 页面的中文系统推断消失、综合推断转为美国；这是网站启发式结果，不证明真机等价。
 
+0.1.11 补充修复火狐跨站导航丢失深浅色配置。检测页的延迟项比较实际资源请求耗时与服务器 TCP RTT；仅伪造 `navigator.connection.rtt` 不会消除这段真实延迟。固定种子保证同一环境稳定，因此不保证通过“每次读回都变化”的评分。直接开启火狐 `resistFingerprinting` 实测会把时区改成 UTC 并覆盖屏幕/显卡，不作为默认多环境配置。
+
 ## 默认设置、更新与数据
 
 默认指纹只用于新建，已有环境保留自己的参数。保存默认预设期间暂时锁定编辑，完成后恢复，避免未保存修改被标记为成功。随机及保存期间编辑区暂时锁定，模式切换会重选匹配引擎的内核并清理旧设备记录。每次批量最多 100 个环境，独立种子和目录；多个环境应留空下载路径使用各自目录。
@@ -89,7 +91,7 @@ Chromix 候选基线 `155.0.8059.79`；Firefox 候选 `158.0.1-beta.41`（Camouf
 
 ## 验证与已知限制
 
-0.1.10 本轮：81 项测试、TypeScript/生产构建、CA/US 检测页、英文字体与实际媒体偏好、设置/随机界面、两引擎桌面身份与代表移动环境回归通过；具体证据与发布状态见 [VERIFICATION.md](VERIFICATION.md)。
+0.1.11 本轮：82 项测试、TypeScript/生产构建、CA/US 检测页与 Firefox 跨站主题回归通过；0.1.10 的字体、随机、两引擎身份与代表移动环境证据保留；具体证据与发布状态见 [VERIFICATION.md](VERIFICATION.md)。
 
 本机 Windows ARM64 的 Chromium 图形上下文受限，相关 WebGL/WebGPU 不标“已验证”，没有绕过 GPU blocklist。火狐代表组合 WebGL 1 名称曾实测匹配，但不证明完整 GPU 或像素能力一致。原生 x64 GPU 全量检查仍需对应硬件，不能用构建通过代替。
 

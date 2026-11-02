@@ -27,6 +27,11 @@ export function firefoxNetworkPrefs(v:Profile['values'],proxied:boolean){
  const policy=String(v.webrtcPolicy),restricted=policy==='disable_non_proxied_udp'||(policy==='auto'&&proxied);
  return {'network.proxy.socks_remote_dns':true,'media.peerconnection.ice.proxy_only':restricted,'media.peerconnection.ice.proxy_only_if_behind_proxy':restricted,'media.peerconnection.ice.no_host':restricted||policy==='default_public_interface_only','media.peerconnection.ice.default_address_only':restricted||policy==='default_public_interface_only'||policy==='default_public_and_private_interfaces'};
 }
+export function firefoxAppearancePrefs(v:Profile['values']){
+ // A page-level Juggler override can be lost when navigation replaces the
+ // browsing context. Gecko's native content preference covers the new one too.
+ return {'layout.css.prefers-color-scheme.content-override':v.colorScheme==='dark'?0:v.colorScheme==='light'?1:2};
+}
 export async function launchFirefox(p:Profile,binary:string,profileDir:string,version:string,proxy?:ProxyConfig){
  p=validateProfile(p);const v=p.values,config=firefoxIdentity(p,version);
  if(proxy&&(v.geoip||v.webrtcMode==='auto')){
@@ -38,7 +43,7 @@ export async function launchFirefox(p:Profile,binary:string,profileDir:string,ve
  const properties=JSON.parse(await fs.readFile(path.join(path.dirname(binary),'properties.json'),'utf8')) as {property:string;removed?:string}[];
  for(const key of Object.keys(config))if(!properties.some(x=>x.property===key&&!x.removed))throw new Error('此火狐内核不支持配置：'+key);
  const prefs:Record<string,string|number|boolean>={'network.cookie.cookieBehavior':v.thirdPartyCookies?0:1,'network.proxy.socks_remote_dns':true,'media.peerconnection.ice.proxy_only_if_behind_proxy':true,'network.dns.disablePrefetch':true,'network.predictor.enabled':false,'network.proxy.failover_direct':false,'network.trr.mode':5,'intl.locale.requested':String(v.locale||'en-US')};
- Object.assign(prefs,firefoxNetworkPrefs(v,Boolean(proxy)));
+ Object.assign(prefs,firefoxNetworkPrefs(v,Boolean(proxy)),firefoxAppearancePrefs(v));
  const env={...process.env};for(const key of Object.keys(env))if(/^CAMOU_(CONFIG|PREFS)_/.test(key))delete env[key];Object.assign(env,chunkConfig(config),Object.fromEntries(Object.entries(chunkConfig(prefs)).map(([k,v])=>[k.replace('CAMOU_CONFIG_','CAMOU_PREFS_'),v])));
  const {firefox}=await import('playwright-firefox-driver');
  return firefox.launchPersistentContext(profileDir,{executablePath:binary,headless:false,timeout:120000,env,firefoxUserPrefs:prefs,viewport:v.viewportMode==='fixed'?{width:Number(v.viewportWidth),height:Number(v.viewportHeight)}:null,...(v.viewportMode==='fixed'?{deviceScaleFactor:Number(v.deviceScale),screen:{width:Number(v.screenWidth),height:Number(v.screenHeight)}}:{}),acceptDownloads:true,...(v.locale?{locale:String(v.locale)}:{}),colorScheme:v.colorScheme==='native'?null:v.colorScheme as any,forcedColors:v.forcedColors==='native'?null:v.forcedColors as any,reducedMotion:v['reduced-motion']==='native'?null:v['reduced-motion']==='true'?'reduce':'no-preference',contrast:null,...(proxy?{proxy:{server:proxyUrl(proxy),username:proxy.username||undefined,password:proxy.password||undefined,bypass:[proxy.bypass,'localhost','127.0.0.1','[::1]'].filter(Boolean).join(',')}}:{})});

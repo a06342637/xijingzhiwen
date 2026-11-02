@@ -1,3 +1,17 @@
+# 栖境 0.1.11 检测站建议复查与 Firefox 主题修复
+
+日期：2026-11-02，Windows ARM64；Chromix 155.0.8059.79 ARM64，Camoufox 158.0.1-beta.41 x64 兼容运行。
+
+- 用相同 CA/US 代理重新启动两引擎的随机环境，先选真实英文 Windows 字体名单再随机，名单保留。四组页面综合识别均为目标国家，语言与 HTTP 请求头分别为 en-CA/en-US；已返回 DNS 位置在目标国，STUN 没有可见候选。CA Chromium 该次 C，US Chromium 与修复前两组 Firefox 为 D，差异主要包括跨城市出口对应不同时区。证据 `.verification/region-recheck-20261102/`。分数波动不作为全部修复通过。
+- 新发现 Firefox 本地深色通过、真实跨站却读到浅色；网页原生 matchMedia 和即时读值均确认，不是仅页面文字缓存。临时重新设置页面深色会变真，但跳到 example.com 和返回均变假。此前 0.1.10 的同站检查不足，修正此前边界描述。
+- 加入 Gecko 原生 `layout.css.prefers-color-scheme.content-override`：深色 0/浅色 1/原生 2。修复后 CA 检测页、跳到另一个站点和返回均为 dark；US 检测页也为 dark/reduced。语言/字体/DNS/WebRTC 项通过，仍有供应商多出口、额外往返延迟与固定指纹可识别的提示。证据 `.verification/firefox-theme-fixed/` 与 `.verification/firefox-theme-final/`。
+- 新增真实火狐深/浅/原生 3 模式 × 初始/新页 × 往返跨站，共 18 次原生页面 CSS 读值检查通过（`.verification/firefox-appearance-011-fresh/firefox-appearance.json`）。首轮测试用 window 私有属性受隔离世界影响，改为页面原生脚本写 DOM；重复使用同一测试目录曾触发上游 startup 超时，因此验收使用每模式独立目录，不掩盖该次失败。无需新下载浏览器内核。
+- 完整读取检测页 `.ck-tip` 建议与公开前端源码，保存在 `.verification/region-advice-review/`。网络延迟项以 `performance.getEntriesByName` 的 responseStart-requestStart 取多次最小值，与 `/api/me` 的 Cloudflare clientTcpRtt 对照；网页建议选择更近/更低延迟节点。
+- 临时仅把 navigator.connection.rtt 改为 20ms：设备网络行显示 20ms，但实际延迟项仍为约 342ms 对 42ms，继续警告。没有修改 Resource Timing/Date.now/服务器响应或检测页分数，也没有把无效 rtt 伪装加入软件。证据 `.verification/latency-fake-property/`。
+- 临时开启网页建议的 Firefox resistFingerprinting：指纹可追踪项变通过，但时区被覆盖为 Atlantic/Reykjavik（UTC）、屏幕/DPR/GPU 也改变，失去原 CA 身份一致性。测试撤销，未作为默认发布；证据 `.verification/firefox-rfp-advice/`。
+- 不挂应用代理的 Chromium 对照：当前宿主公网/DNS 在新加坡，多个服务显示同一出口，HTTP/3/ECH 可用，未显示 DNS 跨国；原生 zh-CN 字体/语言仍被判断中国，与出口不符。只证明当前路径对照，不称本机网络没有其他中间层。证据 `.verification/region-direct-compare/`。
+- 82 项测试、TypeScript/生产构建和隔离桌面烟测通过；设置/字体/随机/批量创建/Chromium 启停及上述火狐主题验收通过。凭据不入仓库，测试修改仅在临时 worker 生效。0.1.11 双架构发布结果完成后补充；旧公开二进制不替换。
+
 # 栖境 0.1.10 CA / US 代理与指纹实测
 
 日期：2026-11-02，Windows ARM64；Chromix 155.0.8059.79 ARM64/x64（x64 为兼容运行），Camoufox 158.0.1-beta.41 x64。用户凭据仅本地临时文件，不进入报告或仓库。
