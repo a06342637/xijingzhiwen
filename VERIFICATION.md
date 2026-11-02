@@ -1,3 +1,15 @@
+# 2026-11-02 日本固定会话代理专项测试
+
+软件 0.1.12，Windows ARM64；Chromix ARM64 / Camoufox x64 兼容运行。用户提供 6 条 JP session 节点，按顺序记 JP1–JP6。仅测试，无运行代码改动；凭据不入仓库。
+
+- 21:51、21:58 和 22:02（Asia/Shanghai）分别连续查询三次。每轮内部各节点 IP 都一致，均为 ja-JP / Asia/Tokyo；约 11 分钟前后对比 JP1/JP2/JP3/JP6 的 IPv4 改变，JP4/JP5 未变。未执行完整 90 分钟测试，不证明 sessTime 参数实际持续时长。
+- 对 6 节点额外使用同一认证路由查询 who.1ms.dog/api/me 与 api.ipify.org，各两轮。JP2/JP4/JP5/JP6 在该组请求中同一 IPv4；JP1/JP3 出现稳定 IPv6 与另一 IPv4。JP5 的日本地址连至 Cloudflare SJC/LAX，美国路由迹象及 RTT 120–127ms 仅该次观察；其余已返回 colo 为 NRT/KIX。
+- 浏览器详细覆盖 JP1 Chromium、JP2 Chromium、JP3 Firefox、JP6 Chromium，访问 Who、BrowserLeaks IP、运行 DNS Leak Test、WebRTC。均识别日本、ja-JP、Asia/Tokyo；Who 分流项为同一出口、WebRTC 无公共地址；BrowserLeaks WebRTC 均为 No Leak。该页面的同出口结果不能反证后续重连的 IP 变化。
+- Who 四组都把 DNS 121.91.240.47（Rackdog）标为美国，并显示中国系统字体提示、额外网络往返延迟，评分 D；浏览器 RTT 约 614–653ms，对服务器 TCP RTT 19–47ms。公网日本与语言/时区匹配项通过，不宣称全部绿色或安全。
+- BrowserLeaks DNS 结果与 Who 有部分差异：JP1 91 个解析器/2 地点、JP2 62 个/1 地点，列出的均在日本；JP3 5 个/2 地点，含 Who 所示的美国解析器和日本；JP6 71 个/2 地点，含日本与新加坡。地域数据库/测试域名解析链路可不同，不仅凭某一个页面判定真实本地 DNS 泄漏；本机原先 Oracle DNS 未在这些列表中出现。
+- 检测站使用的浏览器仍保留本机字体、真实图形/架构能力，JP 目前不套 CA/US 英文字体池；中文字体推断属于当前未覆盖边界。原生 GPU 不可用/软件渲染保留实测结果，未改页面评分或伪造网络延迟。
+- 证据 `.verification/jp-session-audit/initial-samples.json`、`eight-minute-samples.json`、`samples.json`、`cross-site.json`、各节点页面及 `summary.json`。测试完成浏览器已退出，未修改用户环境。JP4 仅稳定性抽样，尚无完整浏览器/DNS 验收，不把它推荐为已验证安全节点。
+
 # 栖境 0.1.12 多检测站、随机策略与默认直连
 
 日期：2026-11-02，Windows ARM64；Chromix 155.0.8059.79 ARM64 与 Camoufox 158.0.1-beta.41 x64 兼容运行。用户 CA/US 凭据仅临时本地，未进入仓库。
