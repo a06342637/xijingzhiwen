@@ -11,7 +11,7 @@ import {randomFingerprint} from '../src/shared/random-fingerprint';
 import {changeEngine} from '../src/renderer/device-editor';
 import {parseProxyInput} from '../src/shared/proxy-input';
 const engine=process.argv[2]||'chromium',mode=process.argv[3]||'real',region=process.argv[4]||'DIRECT';
-const root=path.resolve('.verification/dashboard-013/'+engine+'-'+mode+'-'+region);await fs.mkdir(root,{recursive:true});
+const root=path.resolve(process.env.QIJING_DASHBOARD_OUTPUT||'.verification/dashboard-013/'+engine+'-'+mode+'-'+region);await fs.mkdir(root,{recursive:true});
 const SQL=await initSqlJs(),db=new SQL.Database(await fs.readFile('.test-data/qijing.sqlite'));
 const kernels=(db.exec("SELECT data FROM objects WHERE kind='kernel'")[0]?.values||[]).map(r=>JSON.parse(String(r[0])));db.close();
 const kernel=kernels.find(k=>(k.engine||'chromium')===engine&&(engine==='firefox'||k.arch===process.arch));assert.ok(kernel,'isolated kernel required');
@@ -37,9 +37,9 @@ const extension=String.raw`
  }
 `;
 const source=(await fs.readFile('src/main/browser-worker.ts','utf8')).replace(" if(action==='start')",extension+" if(action==='start')");const worker=path.join(root,'worker.cjs');await build({stdin:{contents:source,resolveDir:path.resolve('src/main'),loader:'ts'},outfile:worker,bundle:true,platform:'node',format:'cjs',packages:'external'});
-const child=fork(worker,[],{windowsHide:true,stdio:['ignore','pipe','pipe','ipc']});child.stdout?.resume();child.stderr?.resume();const pending=new Map<string,any>();child.on('message',(m:any)=>{const req=pending.get(m.id);if(req){clearTimeout(req.timer);pending.delete(m.id);m.ok?req.resolve(m.result):req.reject(new Error(m.error));}});child.on('exit',()=>{for(const req of pending.values()){clearTimeout(req.timer);req.reject(new Error('worker exited'));}pending.clear();});
+const child=fork(worker,[],{windowsHide:true,stdio:['ignore','pipe','pipe','ipc']});child.stdout?.resume();child.stderr?.resume();const pending=new Map<string,any>(),notices:string[]=[];child.on('message',(m:any)=>{if(m.event==='notice'||m.event==='fatal')notices.push(m.error);const req=pending.get(m.id);if(req){clearTimeout(req.timer);pending.delete(m.id);m.ok?req.resolve(m.result):req.reject(new Error(m.error));}});child.on('exit',()=>{for(const req of pending.values()){clearTimeout(req.timer);req.reject(new Error('worker exited'));}pending.clear();});
 const rpc=(action:string,payload:any={},timeout=180000)=>new Promise<any>((resolve,reject)=>{const id=randomUUID(),timer=setTimeout(()=>{pending.delete(id);reject(new Error(action+' timeout'));},timeout);pending.set(id,{resolve,reject,timer});child.send({id,action,payload});});
-const report:any={engine,mode,region,kernel:kernel.version,arch:kernel.arch,checks:[]};
+const report:any={engine,mode,region,kernel:kernel.version,arch:kernel.arch,checks:[],notices};
 try{
  if(mode==='disabled'||mode==='blank'){
   await rpc('start',{profile:p,kernel,profileDir:path.join(root,'profile'),downloadDir:path.join(root,'downloads'),extensions:[],blank:mode==='blank',startupDashboard:mode==='blank'});await new Promise(r=>setTimeout(r,1500));const s=await rpc('dashboardSnapshot');assert.equal(s.state,undefined);assert.deepEqual(s.pages,['about:blank']);report.checks.push('disabled/blank: no dashboard or external tabs');

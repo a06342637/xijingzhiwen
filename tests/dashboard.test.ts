@@ -27,7 +27,8 @@ test('dashboard token, origin, refresh exclusion, export and clean shutdown',asy
  try{
   assert.equal((await fetch(local.origin+'/')).status,404);assert.equal((await post('run',{},'https://foreign.test')).status,403);assert.equal((await post('run',null)).status,400);
   const html=await fetch(local.url);assert.ok(html.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));assert.equal(html.headers.get('cache-control'),'no-store');
-  assert.equal((await post('observation',{})).status,400);assert.equal((await post('observation',{identity:{ua:'actual UA'},screen:{width:1440},webgl:{},preferences:{}})).status,200);
+  const script=await(await fetch(local.url+'/probe.js')).text();const sample=JSON.parse(script.match(/const sample=("[^"]+")/)![1]);
+  assert.equal((await post('observation',{})).status,400);assert.equal((await post('observation',{sample,observation:{identity:{ua:'actual UA'},screen:{width:1440},webgl:{},preferences:{}},status:'complete'})).status,200);
   const runs=await Promise.all([post('run',{}),post('run',{})]);assert.deepEqual(runs.map(r=>r.status).sort(),[200,409]);assert.equal(calls,1);finish();
   assert.equal((await post('open',{id:'http://arbitrary.test'})).status,400);assert.equal((await post('open',{id:'who'})).status,200);assert.equal(opened,'who');
   const exported=await fetch(local.url+'/export');assert.ok(exported.headers.get('content-disposition')?.includes('attachment'));const report=await exported.json();assert.equal(report.observation.identity.ua,'actual UA');assert.equal(report.sources.length,4);assert.ok(!JSON.stringify(report).includes('password'));
@@ -37,4 +38,24 @@ test('dashboard token, origin, refresh exclusion, export and clean shutdown',asy
 test('startup dashboard defaults on for old settings and disable survives reopening',async()=>{
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-dashboard-settings-'));const crypto={isEncryptionAvailable:()=>true,encryptString:(s:string)=>Buffer.from(s),decryptString:(b:Buffer)=>b.toString()};let store=new Store(root,crypto);
  try{await store.init();store.put('settings','app',{view:'list',theme:'dark',maxBrowsers:4});assert.equal(store.settings().startupDashboard,true);const next=validateSettingsPatch({startupDashboard:false},store.settings());store.put('settings','app',next);assert.throws(()=>validateSettingsPatch({startupDashboard:'false'},next));store.close();store=new Store(root,crypto);await store.init();assert.equal(store.settings().startupDashboard,false);assert.equal(store.settings().theme,'dark');}finally{store.close();await fs.rm(root,{recursive:true,force:true});}
+});
+
+test('a new native observation rejects old samples, and completed samples cannot regress',async()=>{
+ const local=await createDashboardPage({profileName:'sampling',engine:'chromium',kernelVersion:'155',architecture:'arm64',proxy:false});
+ const sample=async()=>JSON.parse((await(await fetch(local.url+'/probe.js')).text()).match(/const sample=("[^"]+")/)![1]);
+ const post=(id:string,status:string,ua:string)=>fetch(local.url+'/observation',{method:'POST',headers:{Origin:local.origin,'Content-Type':'application/json'},body:JSON.stringify({sample:id,status,observation:{identity:{ua},screen:{width:800},preferences:{},webgl:{}}})});
+ try{const old=await sample(),current=await sample();assert.notEqual(old,current);assert.equal((await post(old,'complete','old')).status,409);assert.equal((await post(current,'running','basic')).status,200);assert.equal((await post(current,'limited','new')).status,200);assert.equal((await post(current,'complete','late')).status,409);assert.equal(local.state().observation.identity.ua,'new');assert.equal(local.state().observationStatus,'limited');}finally{await local.close();}
+});
+
+test('unknown and unfinished WebRTC text is not a false leak or pass; scores stay bounded',()=>{
+ for(const rtc of ['WebRTC Leak Test','Checking for Leaks'])assert.equal(parseBrowserLeaks({rtc}).items[0].status,'info');
+ assert.equal(parseBrowserLeaks({rtc:'No Leak',rtcError:'unfinished'}).items[0].status,'warn');assert.equal(parseBrowserLeaks({rtc:'Leak Detected'}).items[0].status,'fail');
+ assert.equal(parseBrowserLeaks({rtc:"No Local IP Leak · WebRTC IP doesn't match your Remote IP"}).items[0].status,'fail');assert.equal(parseBrowserLeaks({rtc:'WebRTC exposes your Local IP · No Public IP Leak'}).items[0].status,'fail');assert.equal(parseBrowserLeaks({rtc:'No Local IP Leak'}).items[0].status,'info');
+ const rows=[1,2,3].map(n=>({label:'check '+n,value:'ok',className:'st-ok'}));assert.equal(parseWho({grade:'D',gradeTitle:'158 / 100',rows}).score,undefined);assert.equal(parseWho({grade:'D',gradeTitle:'9.5 / 100',rows}).score,undefined);
+ assert.equal(parseCreepjs('120% like headless: 0% headless: 0% stealth:').status,'limited');assert.doesNotThrow(()=>parseBrowserLeaks({dnsRows:[null],rows:[null]}));
+});
+
+test('open-original failure returns a visible error instead of a successful response',async()=>{
+ const local=await createDashboardPage({profileName:'open',engine:'firefox',kernelVersion:'158',architecture:'x64',proxy:false});local.handlers({run:async()=>{},open:async()=>{throw new Error('检测站返回 HTTP 503');}});
+ try{const response=await fetch(local.url+'/open',{method:'POST',headers:{Origin:local.origin,'Content-Type':'application/json'},body:JSON.stringify({id:'who'})});assert.equal(response.status,502);assert.ok((await response.json()).error.includes('503'));}finally{await local.close();}
 });

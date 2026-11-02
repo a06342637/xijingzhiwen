@@ -1,3 +1,16 @@
+# 启动总览复查（源码同步，尚未发行）
+
+日期：2026-11-03。沿用 0.1.13 版本号，按用户本轮要求同步修复源码和文档到 GitHub；不生成新发行包、不推送发行标签。已安装软件仍需后续发行才能收到这些修复。
+
+- 98 项测试、TypeScript 与生产构建通过。新增旧/迟到采样隔离、WebRTC 两行泄漏结论、无结论状态、异常分值和打开原站失败返回覆盖。
+- Chromium CA、Firefox US 真实代理汇总四站，Who 分别 D/58、C/66；出口与时区继续按实测显示，未改变代理供应商路由或原站成绩。证据 `.verification/dashboard-local-ca-chromium/`、`.verification/dashboard-013/firefox-real-US/`。WebRTC 附加行修复后的 Chromium CA 再测四站完成、No Leak 实测通过，证据 `.verification/dashboard-local-final-ca/`。
+- Chromium 与 Firefox 隔离维护者响应回归均通过：三次重载、真实浏览器 JSON 下载、375/768/1280 布局、12 秒卡住采样、离开/返回、两行公网泄漏、原站 HTTP 503 失败提示、关闭服务。证据 `.verification/dashboard-audit-local/chromium-1793643400626/`、`.verification/dashboard-audit-local/firefox-1793643572250/`。维护者固定响应与真实网站证据分开，不提供用户脚本入口。
+- 管理软件 smoke 覆盖设置开关、字体资源、Chromium 启停、Cookie/localStorage、独立下载、扩展及认证 HTTP 代理请求，全部通过；证据 `.verification/dashboard-manager-local-check/`。
+- 一次 Chromium CA 总览启动失败，独立新目录重试通过；本地页改为只等 DOM 就绪，高级观测不阻塞启动。Firefox 压力测试较慢，多项原定固定等待过短；等待实际状态后核对，不把等待失败等同于软件通过。
+- 推送前最终复查：98 项测试与生产构建通过，Chromium/Firefox 三次重载、下载报告、布局、超时采样、两行 WebRTC 泄漏、离开/返回、原站错误和关闭服务均通过，证据 `.verification/dashboard-audit-local/chromium-1793643926307/`、`.verification/dashboard-audit-local/firefox-1793643925693/`。
+- 并行浏览器检查期间，下载 smoke 的四秒固定等待出现一次失败；改为最长十五秒核对实际文件保存，复测全部通过。实际下载、Cookie/localStorage、扩展、认证代理、设置开关及资源验收见 `.verification/dashboard-final-push-recheck/smoke.json`。此改动属于维护者验证等待，未改产品下载行为。
+- 当前为 Windows ARM64 本机 Chromium ARM64 / Camoufox x64 兼容测试；没有重新执行 GitHub 原生 x64 构建或安装迁移。网页变更、挑战与代理轮换边界仍适用。
+
 # 栖境 0.1.13 启动环境检测总览验收
 
 日期：2026-11-03，Windows ARM64；Chromix 155.0.8059.79 ARM64、Camoufox 158.0.1-beta.41 x64 兼容运行。
