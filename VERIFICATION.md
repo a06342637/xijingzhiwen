@@ -5,6 +5,8 @@
 - 62 项测试通过；新增单选 CPU/GPU 保留选择、CPU 单独预设保持原生 GPU、手动参数清理型号、跨引擎 UA/版本清理、安装准备期间错误取消等回归。TypeScript 和生产构建通过。
 - Electron 隔离界面：旧 Intel 集显环境选择 AMD CPU 后保留 AMD；自定义内存显示“自定义硬件”；编辑线程数清除旧 CPU 型号。横屏与禁用字段检查通过。
 - 真实 Chromium Cookie/localStorage、独立目录、加密迁移、下载、MV3、HTTP 认证代理、启动/诊断/停止竞争和失败锁清理通过。
+- Firefox 真实启动、Cookie/localStorage 重启保留与加密迁移再次通过。
+- GitHub Actions Run 41409480717：ARM64/x64 原生构建、62 项测试、安装包启动与附件摘要发布全部通过。v0.1.7 已公开，真实 updater 分架构下载并通过 SHA-512，断开的终端管道没有中断更新。README 已按当前版本重写。
 - 未操作正常用户环境或 Windows 设置。硬件真实 GPU/网站兼容和轮换代理限制不因测试通过而取消。
 
 以下为历史版本证据。
