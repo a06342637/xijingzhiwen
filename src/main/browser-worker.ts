@@ -1,11 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {diagnosticPage} from './diagnostic-page';
-import {buildOptions,proxyUrl} from '../shared/config';
+import {buildOptions} from '../shared/config';
 import {launchFirefox} from './firefox';
 import {firefoxCookies} from './firefox-cookies';
 import {mobileUA,mobileIdentity} from '../shared/devices';
 import {resolveProxyLocale} from './proxy-locale';
+import {checkProxyRoute} from './proxy-check';
 let resolvedGeo:unknown;
 const pageReady=new WeakMap<object,Promise<void>>();
 let context:any,profile:any,kernel:any,initial:any;
@@ -44,7 +45,7 @@ async function request(action:string,payload:any){
  if(action==='focus'){const page=context?.pages()[0];if(page)await page.bringToFront();return true;}
  if(action==='diagnose')return diagnostic();
  if(action==='exportCookies'||action==='importCookies'){if(profile.values.engine==='firefox')return firefoxCookies(context,action,payload.path,payload.passphrase);const lib=await sdk();return action==='exportCookies'?lib.exportCookies(context,payload.path,{passphrase:payload.passphrase}):lib.importCookies(context,payload.path,{passphrase:payload.passphrase});}
- if(action==='proxyTest'){secretValues=[payload.proxy.password,payload.proxy.username].filter(Boolean);const lib=await sdk();return lib.maybeResolveGeoip(true,{server:proxyUrl(payload.proxy),username:payload.proxy.username||undefined,password:payload.proxy.password||undefined},undefined,undefined,[]);}
+ if(action==='proxyTest'){secretValues=[payload.proxy.password,payload.proxy.username].filter(Boolean);return checkProxyRoute(payload.proxy);}
  throw new Error('未知浏览器命令');
 }
 process.on('message',(message:any)=>{void request(message.action,message.payload).then(result=>send({id:message.id,ok:true,result})).catch(error=>send({id:message.id,ok:false,error:safeError(error)}));});

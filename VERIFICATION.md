@@ -1,3 +1,19 @@
+# 栖境 0.1.10 CA / US 代理与指纹实测
+
+日期：2026-11-02，Windows ARM64；Chromix 155.0.8059.79 ARM64/x64（x64 为兼容运行），Camoufox 158.0.1-beta.41 x64。用户凭据仅本地临时文件，不进入报告或仓库。
+
+- 实际使用用户给定 CA/US HTTP 认证节点启动随机环境，访问 who.1ms.dog，读取页面报告并保存截图。本机原生窗口工具初始化失败，改用应用开发验收接口读取浏览器页面和本地诊断；未声称完成原生窗口截图检查。页面结果保留在 `.verification/region-audit/`。
+- 初始 Chromium CA 页：公网加拿大、en-CA、DNS 加拿大、WebRTC 无公共/本地候选；启动元数据为 America/Edmonton，网站出口为 America/Toronto。US 页：公网美国、en-US、DNS 美国、WebRTC 无候选；启动时 New_York，网站出口 Chicago。两页看到约 7 个出口，字体列表导致 US 综合启发式推断中国。此结论不是 IP 国家错误。
+- 发现 Chromium 选深色/减少动画却返回浅色/无偏好。桌面取消 Playwright 默认媒体模拟后，真实内核深色、减少动画和高对比度均与配置一致；网站 CA 重测显示 dark/reduced。移动显式媒体模拟保持原配置。证据 `preferences-real.json`、`CA-chromium-fonts-dark.json`。
+- 英文 Windows 字体名单实测：字体采样从 18/46 降为 10/46，中文系统提示消失；US x64 Chromix 页综合推断美国（B，DNS 该次未知），CA Chromium/Firefox 页综合推断加拿大（C）。名单只限制本机真实字体，不下载或修改系统，不证明所有文字/字体通道已隔离。再次随机保留 fontPolicy/fontWhitelist。
+- Firefox US 原生字体页公网/DNS 美国、en-US、时间偏移与该次出口一致，中文字体启发式仍提示中国；CA 英文名单页公网/DNS 加拿大、en-CA、Toronto 时区一致。代表 RTX 3070/5080 名称在 WebGL 1 返回，WebGL 2/WebGPU 不标已验证。深色/减少动画在独立初始页、新页和二次导航实测一致；个别网站文本缓存不得替代实际 CSS 返回值。
+- CA/US 连续三次元数据查询均得到不同 IP 和不同时区；新增代理测试结果明确提示轮换。一次临时连接错误报失败，没有直连回退；重新测试成功。证据 `proxy-samples.json`。软件未猜测或擅改供应商会话认证格式。
+- STUN 实测无可见 ICE 候选；检测页已返回的 DNS 位于目标国，但一次 US DNS 查询未知。检测页偶有 IPv6 或外部服务连接失败，部分 IPv6 地址为代理出口、与本机 IPv6 不同。没有据此宣称所有 DNS/UDP/流量绝无泄漏。HTTP/3/UDP 与 ECH 限制保持原设计；代理往返延迟和出口切换不能靠身份名称消除。
+- ARM 宿主的 ARM64/x64 Chromix 都实际返回 Client Hints architecture=arm；不能把 Intel/AMD 名称记录宣称 x86 真机。当前宿主 WebGL/WebGPU 不可用，保留真实限制，没有绕过 GPU blocklist 或模拟完整 GPU。诊断添加架构实际值与提示。
+- 81 项测试、TypeScript/生产构建通过。隔离桌面 smoke 的设置保存、字体按钮、代理粘贴、随机/批量创建、Chromium 启停/诊断、Chrome/Firefox 三种桌面系统身份及 iPhone/iPad/Android 代表环境通过；不等于 macOS/Linux 原生软件验收。
+- 最终 0.1.10 界面复验：新建环境选择英文字体名单再一键随机，名单保留，批量创建通过。真实 Browsers → worker → SDK 的 CA/US 出口测试均返回轮换/时区提示，结束后 worker 清理；证据 `region-final-smoke/smoke.json` 和 `region-audit/worker-proxy-real.json`。
+- 当前修复进入 0.1.10；双架构发布与下载结果完成后补充。此前 0.1.9 公共二进制不替换。
+
 # 栖境 0.1.9 可靠性深入检查
 
 日期：2026-11-02，Windows ARM64；Firefox x64 Camoufox 兼容运行。

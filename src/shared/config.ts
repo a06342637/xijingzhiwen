@@ -65,7 +65,9 @@ export function buildOptions(p:Profile,binary:string,profileDir:string,extension
  if(v.canvasBridge)args.push(`--fingerprint-canvas-bridge=${v.canvasBridge}`,'--fingerprint-canvas-bridge-unsafe');
  if(v.maximized)args.push('--start-maximized');else args.push(`--window-size=${v.windowWidth},${v.windowHeight}`);
  if(extensions.length){if(extensions.some(p=>p.includes(',')))throw new Error('扩展目录不能包含逗号');args.push('--load-extension='+extensions.join(','),'--disable-extensions-except='+extensions.join(','));}
- const options:any={userDataDir:profileDir,headless:false,stealthArgs:false,args,geoip:Boolean(v.geoip),viewport:v.viewportMode==='fixed'?{width:v.viewportWidth,height:v.viewportHeight}:null,launchOptions:{executablePath:binary,chromiumSandbox:true,timeout:60000,downloadsPath:p.downloadDir||undefined,ignoreDefaultArgs:extensions.length?['--enable-automation','--disable-extensions']:['--enable-automation']},contextOptions:{acceptDownloads:true}};
+ // Null disables Playwright's default light/no-preference media emulation,
+ // allowing the kernel's configured preferences (and native defaults) to apply.
+ const options:any={userDataDir:profileDir,headless:false,stealthArgs:false,args,geoip:Boolean(v.geoip),viewport:v.viewportMode==='fixed'?{width:v.viewportWidth,height:v.viewportHeight}:null,launchOptions:{executablePath:binary,chromiumSandbox:true,timeout:60000,downloadsPath:p.downloadDir||undefined,ignoreDefaultArgs:extensions.length?['--enable-automation','--disable-extensions']:['--enable-automation']},contextOptions:{acceptDownloads:true,colorScheme:null,reducedMotion:null,forcedColors:null,contrast:null}};
  if(v.viewportMode==='fixed')Object.assign(options.contextOptions,{screen:{width:Number(v.screenWidth),height:Number(v.screenHeight)},deviceScaleFactor:Number(v.deviceScale)});
  if(v.deviceType&&v.deviceType!=='desktop'){
   options.args=args.filter(a=>!a.startsWith('--fingerprint-')&&!a.startsWith('--fingerprint='));options.args.unshift('--fingerprint=off');

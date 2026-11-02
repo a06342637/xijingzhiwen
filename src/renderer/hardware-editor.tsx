@@ -18,5 +18,5 @@ export function HardwareEditor({values,onChange}:{values:Values;onChange:(v:Valu
  <label className="field"><span>组合内存记录</span><select aria-label="组合内存记录" value={Number(values.hardwareRam)} onChange={e=>onChange(selectHardware(values,{ram:Number(e.target.value)}))}>{[...new Set([8,16,24,32,48,64,96,128,256,Number(values.hardwareRam)])].sort((a,b)=>a-b).map(n=><option key={n} value={n}>{n} GB</option>)}</select></label>
  <label className="field"><span>一键随机组合</span><label className="batch-random"><input type="checkbox" checked={values.hardwareRandom!==false} onChange={e=>onChange({...values,hardwareRandom:e.target.checked})}/>随机 CPU 与显卡组合</label><small>开启后从所选系统的组合中选择；关闭后随机保留当前 CPU、内存和显卡配置。移动环境保持自己的模拟配置。</small></label></div>
  <div className="hardware-result"><strong>网页可见参数</strong><p>逻辑线程数 {values.cpu} · {values.engine==='firefox'?'火狐无 deviceMemory API':'deviceMemory '+values.memory+' GB（浏览器限幅值）'}</p><small>{values.gpuVendor?values.gpuVendor+' / '+values.gpuRenderer:'GPU 使用原生返回值'}</small></div>
- <p className="inline-notice">CPU 名称仅在软件中记录；网页主要读取线程数。显卡覆盖仅修改 WebGL 名称，WebGPU、驱动能力、图形像素和算力仍受真实硬件限制；不代表一台完整虚拟电脑。保存后重启并检查环境。</p></section>;
+ <p className="inline-notice">CPU 名称仅在软件中记录；网页主要读取线程数。CPU 架构仍由内核与宿主决定，ARM 电脑选择 Intel/AMD 不会变成 x86；x64 兼容运行也不保证架构变化。显卡覆盖仅修改 WebGL 名称，WebGPU、驱动能力、图形像素和算力仍受真实硬件限制。保存后重启并检查环境。</p></section>;
 }

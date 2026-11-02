@@ -13,6 +13,7 @@ export async function featureSmoke(window:BrowserWindow,output:string){
  const screenshot=async(name:string)=>fs.writeFile(path.join(output,name),(await window.webContents.capturePage()).toPNG());
  const before=await js<AppState>("window.qijing.invoke('state')");
  await click('软件设置','.nav-item');
+ await click('字体 / 存储','.advanced-nav button');await click('使用英文 Windows 字体名单');assert.equal(await js("document.querySelector('#setting-fontPolicy').value"),'restricted');assert.ok((await js<string>("document.querySelector('#setting-fontWhitelist').value")).includes('Segoe UI'));await screenshot('english-font-preset.png');await fill('#setting-fontPolicy','native');await fill('#setting-fontWhitelist','');
  await click('语言 / 时区','.advanced-nav button');
  await fill('#setting-locale','ja-JP');await fill('#setting-timezone','Asia/Tokyo');
  await click('实验设置','.defaults-panel .editor-tabs button');await js("(()=>{const input=document.querySelector('#setting-fakeShadowRoot');if(!input.checked)input.click();})()");await wait();await screenshot('settings-experimental.png');
@@ -23,12 +24,14 @@ export async function featureSmoke(window:BrowserWindow,output:string){
  await click('高级配置','.modal .editor-tabs button');await click('语言 / 时区','.modal .advanced-nav button');assert.equal(await js("document.querySelector('#setting-locale').value"),'ja-JP');
  await click('实验设置','.modal .editor-tabs button');assert.equal(await js("document.querySelector('#setting-fakeShadowRoot').checked"),true);
  await click('基础设置','.modal .editor-tabs button');
+ await click('高级配置','.modal .editor-tabs button');await click('字体 / 存储','.modal .advanced-nav button');await click('使用英文 Windows 字体名单');await click('基础设置','.modal .editor-tabs button');
  await fill('.modal input[placeholder="例如：美国店铺 A"]','批量随机验收');await fill('.batch-controls input[type=number]','3');await js("document.querySelector('.batch-controls .batch-random input').click()");
  await fill('[aria-label="代理来源"]','manual');
  await js(`(()=>{const el=document.querySelector('.proxy-paste textarea');const data=new DataTransfer();data.setData('text','gate.example.test:1000:sample-account:sample-secret-JP');el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true}));})()`);await wait();
  assert.equal(await js("Array.from(document.querySelectorAll('.inline-proxy input')).find(x=>x.value==='gate.example.test')?.value"),'gate.example.test');
  assert.equal(await js("document.querySelector('.inline-proxy input[type=password]').value"),'sample-secret-JP');
  await click('随机指纹');await js("new Promise((resolve,reject)=>{const started=Date.now();const check=()=>{if(!document.querySelector('.editor-fields')?.disabled)return resolve();if(Date.now()-started>10000)return reject(new Error('Randomization did not finish'));setTimeout(check,50);};check();})");await screenshot('batch-random-proxy.png');
+ await click('高级配置','.modal .editor-tabs button');await click('字体 / 存储','.modal .advanced-nav button');assert.equal(await js("document.querySelector('.modal #setting-fontPolicy').value"),'restricted');assert.ok((await js<string>("document.querySelector('.modal #setting-fontWhitelist').value")).includes('Segoe UI'));await click('基础设置','.modal .editor-tabs button');
  await click('创建 3 个环境');
  for(let i=0;i<20;i++){state=await js<AppState>("window.qijing.invoke('state')");if(state.profiles.filter(p=>p.name.startsWith('批量随机验收 ')&&!before.profiles.some(old=>old.id===p.id)).length===3)break;await wait();}
  const created=state.profiles.filter(p=>p.name.startsWith('批量随机验收 ')&&!before.profiles.some(old=>old.id===p.id));assert.equal(created.length,3);assert.equal(new Set(created.map(p=>p.seed)).size,3);assert.equal(new Set(created.map(p=>JSON.stringify(p.values))).size,3);assert.ok(created.every(p=>p.proxyId&&p.values.locale==='ja-JP'&&p.values.fakeShadowRoot===true));assert.equal(state.proxies.find(p=>p.id===created[0].proxyId)?.hasPassword,true);assert.equal(state.proxies.find(p=>p.id===created[0].proxyId)?.password,undefined);
