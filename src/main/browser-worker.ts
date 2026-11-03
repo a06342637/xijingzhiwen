@@ -27,7 +27,7 @@ async function start(payload:any){
  if(payload.proxy&&matched.geo&&profile.values.randomStrategy!=='catalog')send({event:'notice',error:'已通过绑定代理匹配当前出口；供应商 DNS、TCP 特征和后续出口轮换仍需实测，建议使用固定会话。'});
  process.env.CLOAKBROWSER_BINARY_PATH=kernel.path;process.env.CLOAKBROWSER_WIDEVINE=profile.values.widevine==='disabled'?'0':'1';if(profile.values.widevine==='custom')process.env.CLOAKBROWSER_WIDEVINE_CDM=profile.values.widevinePath;
  const lib=await sdk();
- if(profile.values.engine==='firefox')context=await launchFirefox(profile,kernel.path,payload.profileDir,kernel.version,payload.proxy);
+ if(profile.values.engine==='firefox')context=await launchFirefox(profile,kernel.path,payload.profileDir,kernel.version,payload.proxy,payload.bookmarkPrefs);
  else if(profile.mode==='measured'){context=await lib.launchPersistentContext({userDataDir:payload.profileDir,headless:false,devicePool:{python:payload.python,host:profile.recordPath,records:[profile.recordPath],seed:profile.seed}} as any);}
  else {const options=buildOptions(profile,kernel.path,payload.profileDir,payload.extensions,payload.proxy);if(profile.values.deviceType!=='desktop')options.userAgent=mobileUA(profile.values,kernel.version);context=await lib.launchPersistentContext(options);
   if(profile.values.deviceType!=='desktop'){

@@ -24,3 +24,7 @@
 .compact-proxy .field{gap:5px}.compact-proxy textarea{min-height:42px;resize:vertical}.compact-proxy .proxy-test-strip{padding:4px 0;margin:0;gap:10px}.inline-proxy{padding:10px 12px!important;margin:0!important}.modal{overflow-anchor:none}.batch-random-note{font-size:12px;white-space:nowrap;color:var(--muted)}
 
 .proxy-source-row{display:flex;align-items:center;gap:10px}.proxy-source-row>span{font-size:12px;white-space:nowrap}.proxy-source-row select{width:230px}.proxy-source-row small{font-size:11px;color:var(--muted)}.inline-proxy .field>small{margin:0}.inline-proxy{padding:9px 12px!important}.random-toolbar{margin-bottom:14px}.proxy-source-row+.inline-proxy{margin-top:-6px!important}
+
+.extension-enabled,.extension-default-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px}.extension-enabled input,.extension-default-preference input{accent-color:var(--green)}.extension-default-preference{white-space:normal;line-height:1.7}
+
+.random-bookmarks-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;margin-left:16px;font-size:13px}.random-bookmarks-preference input{accent-color:var(--green)}

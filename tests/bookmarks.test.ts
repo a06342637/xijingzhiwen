@@ -1,0 +1,19 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
+import sites from '../resources/bookmark-sites.json';
+import {generatedBookmarks,prepareBookmarks,bookmarkFolder,placesUrlHash} from '../src/main/bookmarks';
+import {newProfile} from '../src/shared/model';
+test('bookmark pool contains 10000+ unique real hostnames and stable independent 60-item selections',()=>{
+ assert.ok(sites.length>10000);assert.equal(new Set(sites).size,sites.length);assert.ok(sites.every(s=>/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(s)));
+ const p=newProfile('test-a','123');const a=generatedBookmarks(p);assert.equal(a.length,60);assert.equal(new Set(a.map(x=>x.url)).size,60);assert.deepEqual(generatedBookmarks(p),a);assert.notDeepEqual(generatedBookmarks({...p,id:'test-b'}),a);assert.notDeepEqual(generatedBookmarks({...p,seed:'124'}),a);
+});
+test('Chromium refresh and disable preserve user bookmarks and replace copied software folders',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-bookmarks-'));try{const p=newProfile('test-a','123');await prepareBookmarks(p,root,true);const file=path.join(root,'Default','Bookmarks');let json=JSON.parse(await fs.readFile(file,'utf8'));json.roots.bookmark_bar.children.push({type:'url',id:'1000',name:'用户书签',url:'https://example.com/'});await fs.writeFile(file,JSON.stringify(json));await prepareBookmarks({...p,seed:'124'},root,true);json=JSON.parse(await fs.readFile(file,'utf8'));assert.equal(json.roots.bookmark_bar.children.length,2);assert.equal(json.roots.bookmark_bar.children[1].children.length,60);await prepareBookmarks({...p,id:'copy'},root,true);json=JSON.parse(await fs.readFile(file,'utf8'));assert.equal(json.roots.bookmark_bar.children.length,2);assert.equal(json.roots.bookmark_bar.children[1].name,bookmarkFolder({id:'copy'}));await prepareBookmarks({...p,id:'copy'},root,false);json=JSON.parse(await fs.readFile(file,'utf8'));assert.deepEqual(json.roots.bookmark_bar.children.map((x:any)=>x.name),['用户书签']);}finally{await fs.rm(root,{recursive:true,force:true});}
+});
+test('Firefox existing Places edits preserve user bookmarks, URL indices and restart stability without destructive HTML import',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-bookmarks-'));const file=path.join(root,'places.sqlite');let db=new DatabaseSync(file);try{db.exec("CREATE TABLE moz_bookmarks(id INTEGER PRIMARY KEY,type INTEGER,fk INTEGER,parent INTEGER,position INTEGER,title TEXT,dateAdded INTEGER,lastModified INTEGER,guid TEXT,syncStatus INTEGER,syncChangeCounter INTEGER);CREATE TABLE moz_places(id INTEGER PRIMARY KEY,url TEXT,title TEXT,rev_host TEXT,guid TEXT,foreign_count INTEGER,url_hash INTEGER);INSERT INTO moz_bookmarks VALUES(1,2,NULL,0,0,'toolbar',0,0,'toolbar_____',1,1);INSERT INTO moz_bookmarks VALUES(2,1,100,1,0,'用户书签',0,0,'user________',1,1);");db.close();const p=newProfile('firefox-a','123');p.values.engine='firefox';await prepareBookmarks(p,root,true);db=new DatabaseSync(file);assert.equal(db.prepare('SELECT count(*) AS n FROM moz_bookmarks').get()!.n,63);const urls=db.prepare('SELECT url,url_hash FROM moz_places').all() as any[];assert.ok(urls.every(x=>x.url_hash===placesUrlHash(x.url)));db.close();const prefs=await prepareBookmarks(p,root,true);assert.equal(prefs['browser.places.importBookmarksHTML'],false);await prepareBookmarks({...p,seed:'124'},root,true);await prepareBookmarks(p,root,false);db=new DatabaseSync(file);assert.equal(db.prepare('SELECT count(*) AS n FROM moz_bookmarks').get()!.n,2);assert.equal(db.prepare("SELECT title FROM moz_bookmarks WHERE id=2").get()!.title,'用户书签');db.close();}finally{try{db.close();}catch{}await fs.rm(root,{recursive:true,force:true});}
+});

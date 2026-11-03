@@ -19,14 +19,14 @@ export const proxySchema=z.object({id:idSchema,name:z.string().trim().min(1).max
 export type ProxyConfig=z.infer<typeof proxySchema>;
 export interface ProxyObservation {proxyId:string;testedAt:string;exitIp:string;country?:string;region?:string;city?:string;isp?:string;timezone?:string;locale?:string;routeStable:boolean;message:string}
 export interface RecycledEnvironment {id:string;profile:Profile;deletedAt:string;expiresAt:string;state:'recoverable'|'purging';hasBrowserData:boolean;hasDownloads:boolean}
-export interface Extension {id:string;name:string;path:string;version:string}
+export interface Extension {id:string;name:string;path:string;version:string;enabled?:boolean}
 export interface Kernel {id:string;engine?:'chromium'|'firefox';version:string;arch:'arm64'|'x64';path:string;sha256:string;source:'release'|'local';status:Verification;installedAt:string;provenance?:unknown}
 export interface Feature {key:string;label:string;group:string;kind:'select'|'text'|'number'|'toggle'|'directory';default:string|number|boolean;options?:string[];flag?:string;min?:number;max?:number;note:string;status:Verification;source:string;probe?:string;experimental?:boolean;platform?:string}
 export interface Check {feature:string;label:string;status:Verification;expected?:unknown;observed?:unknown;detail:string}
 export interface Report {id:string;profileId:string;profileName:string;kernelId:string;version:string;arch:string;sha256:string;createdAt:string;kind:'environment'|'upstream'|'upgrade'|'device';status:Verification;checks:Check[];observations:unknown;outputDir?:string}
 export interface DownloadProgress {id:string;label:string;received:number;total:number;phase:string;error?:string}
 export interface SoftwareUpdate {phase:'idle'|'checking'|'available'|'current'|'downloading'|'downloaded'|'installing'|'error';version?:string;notes?:string;percent:number;message:string}
-export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;automaticUpdates?:boolean;startupDashboard?:boolean;diagnosticLinks?:boolean;listDefaultV2?:boolean;proxyLocaleDefaultsV1?:boolean}
+export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;automaticUpdates?:boolean;startupDashboard?:boolean;diagnosticLinks?:boolean;inheritEnabledExtensions?:boolean;randomBookmarks?:boolean;listDefaultV2?:boolean;proxyLocaleDefaultsV1?:boolean}
 export interface AppState {profiles:Profile[];proxies:ProxyConfig[];proxyObservations?:ProxyObservation[];recycle?:RecycledEnvironment[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate}
 export type Reply<T=unknown>={ok:true;data:T}|{ok:false;error:string};
 export interface DesktopApi {invoke<T=unknown>(action:string,payload?:unknown):Promise<T>;onState(callback:(state:AppState)=>void):()=>void}

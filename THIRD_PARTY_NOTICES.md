@@ -42,3 +42,15 @@ the component runtime-license directory. Runtime binaries are not bundled in
 the Qijing installer; no system-wide runtime installation is performed.
 
 The bundled Chromix Node GeoIP adapter is locally extended to preserve validated country/region/city/ISP metadata for proxy display; upstream response parsing and no-direct-fallback behavior remain. This local modification is covered by its BSD-3-Clause license.
+
+Random bookmark domain pool: derived from Majestic Million, retrieved 2026-11-03.
+Source: https://downloads.majestic.com/majestic_million.csv
+Attribution: Majestic, https://majestic.com/reports/majestic-million
+License: Creative Commons Attribution 3.0, https://creativecommons.org/licenses/by/3.0/
+Qijing selects 15,000 valid unique hostnames with basic keyword exclusions and
+generates HTTPS bookmark links. Ranking is not an endorsement of safety or availability.
+Source metadata is retained in resources/bookmark-sites-source.json (installed config/).
+
+Places URL hash implementation follows Mozilla's HashFunctions.h / Places Helpers.cpp
+(https://github.com/mozilla/gecko-dev), MPL-2.0. Corresponding source implementation
+is available in src/main/bookmarks.ts in the Qijing repository.

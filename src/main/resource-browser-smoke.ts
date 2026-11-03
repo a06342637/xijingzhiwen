@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import http from 'node:http';
+import {DatabaseSync} from 'node:sqlite';
+import {randomUUID} from 'node:crypto';
+import {Store,newSeed} from './store';
+import {Browsers} from './browsers';
+import {importExtension} from './extensions';
+import {bookmarkFolder,generatedBookmarks,placesUrlHash} from './bookmarks';
+import {defaultValues,type Profile} from '../shared/model';
+export async function resourceBrowserSmoke(store:Store,browsers:Browsers,handlers:Record<string,(p:any)=>Promise<any>>){
+ const original=store.settings(),root=path.join(store.root,'resource-browser-'+randomUUID());await fs.mkdir(root);let loaded=false;
+ const stage=(message:string)=>fs.appendFile(path.join(store.root,'resource-browser-progress.txt'),message+'\n');await stage('start');
+ const server=http.createServer((req,res)=>{if(req.url==='/extension-loaded')loaded=true;res.setHeader('Content-Type','text/html');res.end('<html><title>Local resource check</title></html>');});await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+(server.address() as any).port;
+ const until=async(check:()=>boolean|Promise<boolean>)=>{for(let i=0;i<150;i++){if(await check())return;await new Promise(r=>setTimeout(r,100));}throw new Error('resource browser verification timed out');};let extId='',profileId='';const checks:any[]=[];
+ try{
+  await fs.writeFile(path.join(root,'manifest.json'),JSON.stringify({manifest_version:3,name:'默认加载实测',version:'1.0',content_scripts:[{matches:['http://127.0.0.1/*'],js:['content.js']}]}));await fs.writeFile(path.join(root,'content.js'),`fetch('${origin}/extension-loaded');`);const ext=await importExtension(store,root);extId=ext.id;
+  store.put('settings','app',{...original,startupDashboard:false,randomBookmarks:true,inheritEnabledExtensions:true,fingerprintDefaults:defaultValues()});
+  const p=await handlers['profile.new']({}) as Profile;p.name='书签扩展实测';p.startUrls=[origin];p.extensionIds=[ext.id];store.put('profile',p.id,p);profileId=p.id;
+  await stage('Chromium '+p.id);await browsers.start(p.id);await until(()=>loaded);await browsers.stop(p.id);await stage('Chromium extension loaded');
+  const chromeFile=path.join(store.root,'profiles',p.id,'Default','Bookmarks');const chrome=()=>fs.readFile(chromeFile,'utf8').then(JSON.parse);let json=await chrome();const owned=(v:any)=>v.roots.bookmark_bar.children.filter((n:any)=>n.meta_info?.qijingProfile===p.id);assert.equal(owned(json).length,1);assert.deepEqual(owned(json)[0].children.map((x:any)=>x.url),generatedBookmarks(p).map(x=>x.url));json.roots.bookmark_bar.children.push({type:'url',id:'10000',name:'用户书签',url:origin});await fs.writeFile(chromeFile,JSON.stringify(json));
+  await browsers.start(p.id,true);await browsers.stop(p.id);assert.equal(owned(await chrome())[0].children.length,60);
+  p.seed=newSeed();store.put('profile',p.id,p);await browsers.start(p.id,true);await browsers.stop(p.id);assert.deepEqual(owned(await chrome())[0].children.map((x:any)=>x.url),generatedBookmarks(p).map(x=>x.url));store.put('settings','app',{...store.settings(),randomBookmarks:false});await browsers.start(p.id,true);await browsers.stop(p.id);json=await chrome();assert.equal(owned(json).length,0);assert.ok(json.roots.bookmark_bar.children.some((x:any)=>x.name==='用户书签'));await store.deleteProfile(p.id);await store.purgeEnvironment(store.recycled().find(r=>r.profile.id===p.id)!.id);profileId='';checks.push({name:'真实 Chromix 默认扩展请求、60书签、重启/重新随机/关闭及用户书签保留',passed:true});
+  store.put('settings','app',{...store.settings(),randomBookmarks:true,fingerprintDefaults:{...defaultValues(),engine:'firefox',brand:'Firefox'}});const f=await handlers['profile.new']({}) as Profile;f.name='火狐书签实测';f.startUrls=[];store.put('profile',f.id,f);profileId=f.id;const ffFile=path.join(store.root,'profiles',f.id,'places.sqlite');
+  const query=(sql:string,...args:any[])=>{const db=new DatabaseSync(ffFile,{readOnly:true});try{return db.prepare(sql).all(...args) as any[];}finally{db.close();}};
+  await stage('Firefox '+f.id);await browsers.start(f.id,true);await stage('Firefox started');await until(()=>{try{return query('SELECT b.id FROM moz_bookmarks b JOIN moz_bookmarks p ON b.parent=p.id WHERE p.title=?',bookmarkFolder(f)).length===60;}catch{return false;}});await browsers.stop(f.id);await stage('Firefox bookmarks read');
+  const folder=query('SELECT parent FROM moz_bookmarks WHERE title=?',bookmarkFolder(f))[0];assert.equal(query('SELECT guid FROM moz_bookmarks WHERE id=?',folder.parent)[0].guid,'toolbar_____');
+  const user='用户保留文件夹';let db=new DatabaseSync(ffFile);db.prepare('INSERT INTO moz_bookmarks(type,parent,position,title,dateAdded,lastModified,guid,syncStatus,syncChangeCounter) VALUES(2,?,99,?,0,0,?,1,1)').run(folder.parent,user,randomUUID().replaceAll('-','').slice(0,12));db.close();
+  await browsers.start(f.id,true);await browsers.stop(f.id);assert.equal(query('SELECT id FROM moz_bookmarks WHERE title=?',bookmarkFolder(f)).length,1);f.seed=newSeed();store.put('profile',f.id,f);await browsers.start(f.id,true);await browsers.stop(f.id);const urls=query('SELECT p.url,p.url_hash FROM moz_places p JOIN moz_bookmarks b ON b.fk=p.id JOIN moz_bookmarks f ON b.parent=f.id WHERE f.title=? ORDER BY b.position',bookmarkFolder(f));assert.deepEqual(urls.map(x=>x.url),generatedBookmarks(f).map(x=>x.url));assert.ok(urls.every(x=>x.url_hash===placesUrlHash(x.url)));
+  store.put('settings','app',{...store.settings(),randomBookmarks:false});await browsers.start(f.id,true);await browsers.stop(f.id);assert.equal(query('SELECT id FROM moz_bookmarks WHERE title=?',bookmarkFolder(f)).length,0);assert.equal(query('SELECT id FROM moz_bookmarks WHERE title=?',user).length,1);checks.push({name:'真实 Firefox 首次导入、工具栏位置、重启不重复、随机更新和关闭保留用户书签',passed:true});return checks;
+ }finally{if(profileId){await browsers.stop(profileId);await store.deleteProfile(profileId);await store.purgeEnvironment(store.recycled().find(r=>r.profile.id===profileId)!.id);}if(extId)await handlers['extension.delete']({id:extId});store.put('settings','app',original);await new Promise<void>(r=>server.close(()=>r()));await fs.rm(root,{recursive:true,force:true});}
+}

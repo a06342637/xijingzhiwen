@@ -12,10 +12,26 @@ export async function peArchitecture(file:string):Promise<'arm64'|'x64'>{const f
 export class Kernels {
  private busy=new Set<string>();
  private inspections=new Set<string>();
- get preparing(){return this.busy.size>0||this.inspections.size>0;}
+ private queue?:Promise<any>;
+ get preparing(){return this.busy.size>0||this.inspections.size>0||Boolean(this.queue);}
  async inspect<T>(id:string,operation:(kernel:Kernel)=>Promise<T>){if(this.inspections.has(id))throw new Error('此内核正在验证或采集');this.inspections.add(id);try{return await operation(await this.verify(id));}finally{this.inspections.delete(id);}}
  constructor(private store:Store,private emit:(p:DownloadProgress)=>void){}
  async available(engine:Engine='chromium'){const repo=engine==='firefox'?'daijro/camoufox':'xiaozhou26/Chromix';const releases=await getJson<any[]>('https://api.github.com/repos/'+repo+'/releases?per_page=15');return releases.filter(r=>!r.draft&&!r.prerelease).map(r=>({engine,version:r.tag_name.replace(/^v/,''),date:r.published_at,archs:engine==='firefox'?(r.assets.some((x:any)=>x.name===`camoufox-${r.tag_name.replace(/^v/,'')}-win.x86_64.zip`)?['x64']:[]):['arm64','x64'].filter(a=>r.assets.some((x:any)=>x.name===`chromix-win-${a}.zip`)),url:r.html_url})).filter(r=>r.archs.length);}
+ installAll(){
+  if(this.queue)return this.queue;
+  this.queue=(async()=>{
+   const releases=await Promise.allSettled([this.available('chromium'),this.available('firefox')]),targets:Array<{engine:Engine;version:string;arch:'arm64'|'x64'}>=[],results:any[]=[];
+   releases.forEach((result,i)=>{if(result.status==='rejected'){results.push({engine:i===0?'chromium':'firefox',ok:false,error:String(result.reason)});return;}for(const release of result.value){if(release.engine==='firefox'?!/^\d+\.\d+\.\d+-beta\.\d+$/.test(release.version):!/^\d+\.\d+\.\d+\.\d+$/.test(release.version))continue;for(const arch of release.archs)if(arch==='arm64'||arch==='x64')targets.push({engine:release.engine,version:release.version,arch});}});
+   for(const [index,target] of targets.entries()){
+    const id=target.engine==='firefox'?'firefox-'+target.version+'-x64':target.version+'-'+target.arch;
+    this.emit({id:'kernel-queue',label:'一键下载所有 · '+(index+1)+'/'+targets.length,received:index,total:targets.length,phase:'排队下载'});
+    if(this.store.kernels().some(k=>k.id===id)){results.push({...target,ok:true,skipped:true});continue;}
+    if(this.busy.has(id)){results.push({...target,ok:true,skipped:true,message:'已在下载'});continue;}
+    try{await(target.engine==='firefox'?this.installFirefox(target.version):this.install(target.version,target.arch));results.push({...target,ok:true});}catch(e){results.push({...target,ok:false,error:String(e)});}
+   }
+   const failures=results.filter(r=>!r.ok).length;this.emit({id:'kernel-queue',label:'一键下载所有',received:targets.length,total:targets.length,phase:failures?'队列完成，有失败项目':'队列完成',...(failures?{error:failures+'项未完成，请查看各项详情'}:{})});return results;
+  })().finally(()=>{this.queue=undefined;});return this.queue;
+ }
  async installFirefox(version=FIREFOX_VERSION){
   if(!/^\d+\.\d+\.\d+-beta\.\d+$/.test(version))throw new Error('火狐内核版本格式无效');const id='firefox-'+version+'-x64';if(this.busy.has(id))throw new Error('该内核正在下载');this.busy.add(id);
   const dir=inside(this.store.root,'kernels',id),staging=inside(this.store.root,'kernels',id+'.'+randomUUID()+'.staging');

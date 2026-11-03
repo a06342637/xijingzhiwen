@@ -1,0 +1,11 @@
+{
+  "name": "Majestic Million",
+  "url": "https://downloads.majestic.com/majestic_million.csv",
+  "sourcePage": "https://majestic.com/reports/majestic-million",
+  "retrieved": "2026-11-03",
+  "license": "CC BY 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+  "count": 15000,
+  "sha256": "0e3e46fab2cc48cb83cb2056d5f0b66880d982b69ae994828dbc72aa9f9976d7",
+  "selection": "first 15000 syntactically valid unique DNS hostnames after basic keyword exclusions; ranking is not a safety/availability endorsement"
+}
