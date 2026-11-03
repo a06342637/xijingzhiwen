@@ -28,3 +28,4 @@
 .extension-enabled,.extension-default-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px}.extension-enabled input,.extension-default-preference input{accent-color:var(--green)}.extension-default-preference{white-space:normal;line-height:1.7}
 
 .random-bookmarks-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;margin-left:16px;font-size:13px}.random-bookmarks-preference input{accent-color:var(--green)}
+.profile-time{display:block;white-space:nowrap;font-variant-numeric:tabular-nums}.profile-time small,.profile-time-empty{color:var(--muted)}.profile-table th:nth-child(6),.profile-table th:nth-child(7){white-space:nowrap}.profile-table td{padding-left:11px;padding-right:11px}

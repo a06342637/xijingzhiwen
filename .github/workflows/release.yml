@@ -40,6 +40,7 @@ jobs:
           QIJING_SMOKE_COMPACT_EDITOR: '1'
           QIJING_SMOKE_EXTENSION_DEFAULTS: '1'
           QIJING_SMOKE_RESOURCE_UI: '1'
+          QIJING_SMOKE_PROFILE_TIMES: '1'
       - name: Prepare release directory
         shell: pwsh
         run: |

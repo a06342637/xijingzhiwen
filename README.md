@@ -6,17 +6,19 @@ Windows 多环境浏览器管理软件。管理界面使用 Electron / React / T
 
 ## 安装与开始使用
 
-1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.17-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.17-x64-Setup.exe`。未配置代码签名证书。
+1. 下载对应电脑架构的安装包：Windows ARM64 使用 `Qijing-0.1.18-arm64-Setup.exe`，常见 Intel/AMD 电脑使用 `Qijing-0.1.18-x64-Setup.exe`。未配置代码签名证书。
 2. 在“内核管理”下载 Chromix 或 Firefox / Camoufox，或导入完整本地内核目录中的可执行文件。软件安装包不包含浏览器内核；诊断 Python 组件也按需下载。
 3. 新建环境，选择引擎、系统/设备、内核与硬件参数；默认可粘贴代理，留空直连。启动网址默认留空，不添加额外页面；保存后点击“启动环境”。首页开关仍独立控制，网页由用户自己操作。
 4. 每个环境有独立数据目录和登录数据。配置修改关闭后保存，重新启动生效。复制只复制配置，生成新种子，不复制 Cookie 或本地存储。
+
+环境列表在状态后显示「创建时间」「启动时间」，按本机时区展示日期和时分秒。启动时间只在浏览器确认启动成功后更新，进入已运行窗口不会改动；没有启动记录显示「从未」。创建/复制/批量新建的环境不继承其他环境的启动时间，回收站恢复保留原时间；旧版没有记录的历史启动无法补推。
 
 普通环境地址栏默认使用 Google 搜索，输入 `chatgpt` 等文字进入搜索；完整网址仍直接访问。Chromium首次启动通过原生搜索设置添加/选择Google，之后保留用户自行更换的选择；Firefox修复内核自带的「None」搜索策略，原策略备份保留。访问Google需要当前网络/代理可连接Google。
 
 | 电脑类型 | 安装包选择 |
 | --- | --- |
-| Intel/AMD 处理器的 Windows 10/11 电脑 | `Qijing-0.1.17-x64-Setup.exe` |
-| 骁龙等 ARM 处理器的 Windows 10/11 电脑 | `Qijing-0.1.17-arm64-Setup.exe` |
+| Intel/AMD 处理器的 Windows 10/11 电脑 | `Qijing-0.1.18-x64-Setup.exe` |
+| 骁龙等 ARM 处理器的 Windows 10/11 电脑 | `Qijing-0.1.18-arm64-Setup.exe` |
 | Apple M 系列或 Intel 芯片的 Mac，运行 macOS | 暂无 macOS 安装包，不能安装 Windows `.exe` |
 | Linux 电脑 | 暂无 Linux 安装包 |
 

@@ -27,6 +27,7 @@ export class Store {
  remove(kind:string,id:string){if(kind==='proxy'&&this.proxyWrites.has(id))throw new Error('代理正在保存，请完成后删除');this.mutate(()=>{this.db.run('DELETE FROM objects WHERE kind=? AND id=?',[kind,id]);if(kind==='proxy')this.db.run('DELETE FROM secrets WHERE id=?',[id]);});}
  profiles():Profile[]{return this.all<Profile>('profile').map(p=>({...p,values:{...defaultValues(),randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values}}));} kernels(){return this.all<Kernel>('kernel');} extensions(){return this.all<Extension>('extension');} reports(){return this.all<Report>('report').slice(0,100);}
  createProfiles(profiles:Profile[]){return this.mutate(()=>{for(const p of profiles)this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?)',['profile',p.id,JSON.stringify(p)]);return profiles;});}
+ recordProfileStart(id:string,at=new Date().toISOString()){const profile=this.get<Profile>('profile',id);return this.put('profile',id,{...profile,lastStartedAt:at});}
  saveProxy(raw:ProxyConfig){
   const p=proxySchema.parse(raw),previous=this.proxyWrites.get(p.id);
   const task=(async()=>{if(previous)await previous.catch(()=>{});const {password,...clean}=p;let effective=password;
@@ -44,7 +45,7 @@ export class Store {
  async proxy(id:string){const p=this.get<ProxyConfig>('proxy',id);const st=this.db.prepare('SELECT data FROM secrets WHERE id=?');st.bind([id]);const encrypted=st.step()?st.getAsObject().data as string:undefined;st.free();if(encrypted)p.password=await this.crypto.decryptString(Buffer.from(encrypted,'base64'));return p;}
  settings():AppState['settings']{let saved:Partial<AppState['settings']>={};try{saved=this.get('settings','app');}catch{}return {view:'list',theme:'system',maxBrowsers:5,automaticUpdates:true,startupDashboard:true,diagnosticLinks:true,inheritEnabledExtensions:true,randomBookmarks:true,...saved,...(!saved.listDefaultV2?{view:'list' as const}:{}),listDefaultV2:true,proxyLocaleDefaultsV1:true,fingerprintDefaults:{...defaultValues(),...saved.fingerprintDefaults,...(!saved.proxyLocaleDefaultsV1?{geoip:true}:{})}};}
  cloneProfile(id:string){const p=this.get<Profile>('profile',id);const now=new Date().toISOString();const copy=this.copyWithId(p,now);return this.put('profile',copy.id,copy);}
- private copyWithId(p:Profile,now:string){return {...p,id:randomUUID(),name:p.name.slice(0,75)+' · 副本',downloadDir:'',seed:newSeed(),archived:false,createdAt:now,updatedAt:now};}
+ private copyWithId(p:Profile,now:string){return {...p,id:randomUUID(),name:p.name.slice(0,75)+' · 副本',downloadDir:'',seed:newSeed(),archived:false,createdAt:now,updatedAt:now,lastStartedAt:undefined};}
  async deleteProfile(id:string,now=Date.now()){
   if(this.deleting.has(id))throw new Error('环境正在删除');const profile=this.get<Profile>('profile',id);this.deleting.add(id);
   const recordId=randomUUID(),dir=this.recycleDir(recordId),moved:Array<[string,string]>=[];

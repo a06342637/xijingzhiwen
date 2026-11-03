@@ -12,7 +12,7 @@ export const profileSchema=z.object({
   startUrls:z.array(z.string().max(2048)).max(20), downloadDir:z.string().max(4096),
   mode:z.enum(['custom','measured']), recordPath:z.string().max(4096),
   values:z.record(z.string(),z.union([z.string().max(8192),z.number().finite(),z.boolean()])),
-  createdAt:z.string(),updatedAt:z.string()
+  createdAt:z.string(),updatedAt:z.string(),lastStartedAt:z.iso.datetime().optional()
 }).strict();
 export type Profile=z.infer<typeof profileSchema>;
 export const proxySchema=z.object({id:idSchema,name:z.string().trim().min(1).max(80),protocol:z.enum(['http','https','socks5']),host:z.string().trim().min(1).max(255),port:z.number().int().min(1).max(65535),username:z.string().max(512),password:z.string().max(4096).optional(),hasPassword:z.boolean().optional(),bypass:z.string().max(1024)}).strict();

@@ -31,7 +31,7 @@ export class Browsers {
   const runner:Runner={child,pending:new Map(),kernelId,status:'starting',profile:profile?structuredClone(profile):undefined,release};this.runners.set(id,runner);
   // Raw browser stderr may contain launch arguments or credentials. Keep it out of logs.
   child.stdout?.on('data',()=>{});child.stderr?.on('data',()=>{});
-  child.on('message',(m:any)=>{if(m.id){const p=runner.pending.get(m.id);if(p){clearTimeout(p.timer);runner.pending.delete(m.id);m.ok?p.resolve(m.result):p.reject(new Error(m.error));}}else if(m.event==='started'){if(runner.status==='starting')runner.status='running';this.changed();}else if(m.event==='notice'||m.event==='fatal'){this.notice(m.error);}else if(m.event==='closed'){runner.status='stopping';this.changed();}});
+  child.on('message',(m:any)=>{if(m.id){const p=runner.pending.get(m.id);if(p){clearTimeout(p.timer);runner.pending.delete(m.id);m.ok?p.resolve(m.result):p.reject(new Error(m.error));}}else if(m.event==='started'){if(runner.status==='starting'){runner.status='running';try{this.store.recordProfileStart(id);}catch(error){this.notice('浏览器已启动，但启动时间保存失败：'+String(error));}}this.changed();}else if(m.event==='notice'||m.event==='fatal'){this.notice(m.error);}else if(m.event==='closed'){runner.status='stopping';this.changed();}});
   child.once('error',error=>this.dispose(id,runner,error));child.once('exit',()=>{void (runner.release?.()||Promise.resolve()).catch(error=>this.notice('释放环境锁失败：'+String(error))).finally(()=>this.dispose(id,runner,new Error('浏览器进程已退出')));});this.changed();return runner;
  }
  private dispose(id:string,runner:Runner,error:Error){if(this.runners.get(id)===runner)this.runners.delete(id);for(const p of runner.pending.values()){clearTimeout(p.timer);p.reject(error);}runner.pending.clear();this.changed();}
@@ -90,7 +90,7 @@ export class Browsers {
  async upgrade(id:string,kernelId:string){
   if(this.isBusy(id))throw new Error('请先关闭环境并等待数据操作完成');this.begin(id);
   try{const original=this.store.get<Profile>('profile',id);if(original.mode==='measured')throw new Error('实测环境绑定原始内核，请为新内核重新采集记录');if(original.archived)throw new Error('请先取消归档');if(original.kernelId===kernelId)throw new Error('已经使用此内核');const targetKernel=await this.kernels.verify(kernelId);if((targetKernel.engine||'chromium')!==(original.values.engine||'chromium'))throw new Error('不能跨引擎复制浏览器数据，请新建环境');const cloneId=randomUUID(),target=inside(this.store.root,'profiles',cloneId),source=inside(this.store.root,'profiles',id);await copyProfile(source,target);
-   const now=new Date().toISOString();const clone={...original,id:cloneId,kernelId,name:original.name.slice(0,69)+' · 升级验证副本',archived:false,createdAt:now,updatedAt:now};try{this.store.put('profile',cloneId,clone);}catch(error){await fs.rm(target,{recursive:true,force:true});throw error;}
+   const now=new Date().toISOString();const clone={...original,id:cloneId,kernelId,name:original.name.slice(0,69)+' · 升级验证副本',archived:false,createdAt:now,updatedAt:now,lastStartedAt:undefined};try{this.store.put('profile',cloneId,clone);}catch(error){await fs.rm(target,{recursive:true,force:true});throw error;}
    try{const report=await this.diagnose(cloneId);report.kind='upgrade';report.profileName=clone.name;this.store.put('report',report.id,report);await fs.writeFile(inside(this.store.root,'reports',report.id+'.json'),JSON.stringify(report,null,2));return {profileId:cloneId,report};}catch(error){this.notice('升级验证未完成，原环境未修改；验证副本保留供检查。');throw error;}
   }finally{this.operations.delete(id);}
  }
