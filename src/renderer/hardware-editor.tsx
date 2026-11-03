@@ -1,9 +1,10 @@
 import React,{useState} from 'react';
 import type {Values} from '../shared/model';
 import {CPUS,GPUS,HARDWARE_PRESETS,compatibleHardware,applyHardware,selectedHardware,selectHardware,type HardwarePreset} from '../shared/hardware';
-export function HardwareEditor({values,onChange}:{values:Values;onChange:(v:Values)=>void}){
+export function HardwareEditor({values,onChange,enabled=true}:{values:Values;onChange:(v:Values)=>void;enabled?:boolean}){
  const [query,setQuery]=useState(''),[family,setFamily]=useState('all');
  if(values.deviceType!=='desktop')return null;
+ if(!enabled)return <div className="inline-notice full">硬件名称覆盖已关闭，可在软件设置统一开启并确认；浏览器保留原生 GPU。</div>;
  const compatible=compatibleHardware(values),preset=selectedHardware(values),selected=preset||(values.cpuModel||values.gpuModel||values.gpuVendor?'custom':'');
  const cpus=CPUS.filter(c=>c.systems.includes(values.platform as any)),gpus=GPUS.filter(g=>g.systems.includes(values.platform as any));
  const cpu=CPUS.find(c=>c.id===values.cpuModel),gpu=GPUS.find(g=>g.id===values.gpuModel);

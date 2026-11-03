@@ -22,7 +22,7 @@ test('all five proxy formats, credentials containing separators and URL encoding
  for(const text of ['host:0','host:65536','ftp://host:80','http://host:80/path','host:8080\nuser:pass'])assert.throws(()=>parseProxyInput(text));
 });
 test('defaults validate cross-field rules and preference patches preserve them',()=>{
- const current={view:'cards' as const,theme:'system' as const,maxBrowsers:5,fingerprintDefaults:defaultValues()};
+ const current={view:'cards' as const,theme:'system' as const,maxBrowsers:5,fingerprintDefaults:defaultValues(),controlledFeatures:{experiments:true}};
  const values={...defaultValues(),locale:'ja-JP',timezone:'Asia/Tokyo',fakeShadowRoot:true};
  const settings=validateSettingsPatch({fingerprintDefaults:values},current);
  assert.equal(validateSettingsPatch({theme:'dark'},settings).fingerprintDefaults.locale,'ja-JP');

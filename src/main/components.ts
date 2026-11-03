@@ -30,10 +30,12 @@ export async function runPython(exe:string,args:string[],timeout=180000,env:Reco
 }
 export class Components {
  private pending?:Promise<string>;
+ private readiness?:{until:number;result:Promise<boolean>};
  constructor(private store:Store,private resources:string,private emit:(p:DownloadProgress)=>void,private changed:()=>void,private arch:string=process.arch){}
  private dir(){return inside(this.store.root,'components','python-'+this.arch);}
- async ready(){try{const marker=JSON.parse(await fs.readFile(path.join(this.dir(),'ready.json'),'utf8'));const lock=JSON.parse(await fs.readFile(path.join(this.resources,'config','components.json'),'utf8'));if(marker.python!==lock.python||marker.manifestHash!==await hashFile(path.join(this.resources,'config','components.json'))||marker.executableHash!==await hashFile(path.join(this.dir(),'python.exe'))||!marker.nativeFiles)return false;for(const [file,sha] of Object.entries(marker.nativeFiles)){if(await hashFile(inside(this.dir(),file))!==sha)return false;}return true;}catch{return false;}}
- async ensure(){if(this.pending)return this.pending;this.pending=(async()=>await this.ready()?path.join(this.dir(),'python.exe'):this.install())().finally(()=>{this.pending=undefined;});return this.pending;}
+ ready(fresh=false){if(!fresh&&this.readiness&&this.readiness.until>Date.now())return this.readiness.result;const result=this.checkReady();this.readiness={until:Infinity,result};void result.finally(()=>{if(this.readiness?.result===result)this.readiness.until=Date.now()+30000;});return result;}
+ private async checkReady(){try{const marker=JSON.parse(await fs.readFile(path.join(this.dir(),'ready.json'),'utf8'));const lock=JSON.parse(await fs.readFile(path.join(this.resources,'config','components.json'),'utf8'));if(marker.python!==lock.python||marker.manifestHash!==await hashFile(path.join(this.resources,'config','components.json'))||marker.executableHash!==await hashFile(path.join(this.dir(),'python.exe'))||!marker.nativeFiles)return false;for(const [file,sha] of Object.entries(marker.nativeFiles)){if(await hashFile(inside(this.dir(),file))!==sha)return false;}return true;}catch{return false;}}
+ async ensure(){if(this.pending)return this.pending;this.pending=(async()=>await this.ready(true)?path.join(this.dir(),'python.exe'):this.install())().finally(()=>{this.pending=undefined;this.readiness=undefined;});return this.pending;}
  get preparing(){return Boolean(this.pending);}
  private async install(){
   const lock=JSON.parse(await fs.readFile(path.join(this.resources,'config','components.json'),'utf8'));const spec=lock.arches[this.arch];if(!spec)throw new Error('当前架构没有组件清单');const staging=inside(this.store.root,'components','python-'+this.arch+'-'+randomUUID()+'.staging');const id='python-'+this.arch;

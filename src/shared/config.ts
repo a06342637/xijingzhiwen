@@ -4,6 +4,7 @@ import { FEATURES, profileSchema, type Profile, type ProxyConfig } from './model
 import {fieldSupported} from './devices';
 import {CPUS,GPUS,hardwareCompatible} from './hardware';
 import {normalizePersona} from './browser-persona';
+import {controlledGroup,type ControlledFeatures} from './controlled-features';
 export function validateProfile(raw:unknown):Profile {
  const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',deviceModel:'',cpuModel:'',gpuModel:'',hardwareRam:16,hardwareRandom:true,randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values};if(p.values.engine==='chromium'&&p.values.deviceType==='desktop'&&p.values.platform!=='windows'&&p.values.brand!=='Firefox')p.values=normalizePersona(p.values);const v=p.values;
  for(const [key,items] of [['cpuModel',CPUS],['gpuModel',GPUS]] as const)if(v[key]&&!items.some(x=>x.id===v[key]&&x.systems.includes(v.platform as any)))throw new Error('硬件型号不存在或不支持当前系统：'+key);
@@ -51,12 +52,12 @@ export function validateProfile(raw:unknown):Profile {
  return p;
 }
 export function proxyUrl(p:ProxyConfig){if(p.host.includes('%'))throw new Error('代理 IPv6 不支持网卡区域标记');if(/[\s\x00-\x1f\/\\@?#]/.test(p.host)||(!isIP(p.host)&&!/^\.?[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.?$/i.test(p.host)))throw new Error('代理主机只填写有效域名或 IP');for(const value of [p.username,p.password])if(value&&/[\x00-\x1f\x7f]/.test(value))throw new Error('代理凭据含无效控制字符');if(p.protocol==='socks5'&&(p.username||p.password)&&(!p.username||!p.password||Buffer.byteLength(p.username)>255||Buffer.byteLength(p.password)>255))throw new Error('SOCKS5 认证需要 1–255 字节的用户名和密码');const host=isIP(p.host)===6?'['+p.host+']':p.host;return `${p.protocol}://${host}:${p.port}`;}
-export function buildOptions(p:Profile,binary:string,profileDir:string,extensions:string[],proxy?:ProxyConfig){
+export function buildOptions(p:Profile,binary:string,profileDir:string,extensions:string[],proxy?:ProxyConfig,allowed?:ControlledFeatures){
  p=validateProfile(p);if(p.mode==='measured')throw new Error('实测模式必须通过专用设备入口启动');
  if(p.values.engine==='firefox')throw new Error('火狐必须通过专用内核入口启动');
  const v=p.values,args:string[]=[`--fingerprint=${v.identityMode==='off'?'off':p.seed}`];
  const nativeExclusions=new Set(['platform','brand','brandVersion','platformVersion','gpuBackend','gpuVendor','gpuRenderer','cpu','memory','screenWidth','screenHeight','taskbarHeight','quota','touch','pointer','hover','fontPolicy','fontWhitelist','audioRender','audioSeed']);
- for(const f of FEATURES){const value=v[f.key];if(!f.flag||value===''||value===false||(value==='native'&&f.key!=='gpuBackend')||(v.identityMode==='off'&&nativeExclusions.has(f.key)))continue;args.push(`--${f.flag}=${value}`);}
+ for(const f of FEATURES){const value=v[f.key],group=controlledGroup(f.key);if((allowed&&group&&!allowed[group.id])||!f.flag||value===''||value===false||(value==='native'&&f.key!=='gpuBackend')||(v.identityMode==='off'&&nativeExclusions.has(f.key)))continue;args.push(`--${f.flag}=${value}`);}
  if(v.noise===false)args.push('--fingerprint-noise=false');
  if(v.webrtcMode==='auto')args.push('--fingerprint-webrtc-ip=auto');
  if(v.webrtcMode==='custom')args.push(`--fingerprint-webrtc-ip=${v.webrtcIp}`);

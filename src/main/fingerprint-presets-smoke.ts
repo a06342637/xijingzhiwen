@@ -12,8 +12,9 @@ export async function fingerprintPresetsSmoke(window:BrowserWindow,store:Store,o
  const js=(s:string)=>window.webContents.executeJavaScript(`(async()=>{return await (${s});})()`);
  const until=(s:string)=>js(`new Promise((resolve,reject)=>{const start=Date.now();function check(){if(${s})return resolve();if(Date.now()-start>15000)return reject(new Error('Preset UI timeout: '+${JSON.stringify(s)}));setTimeout(check,50);}check();})`);
  try{
+  store.put('settings','app',{...original,controlledFeatures:{...original.controlledFeatures,hardwareIdentity:true}});
   await handlers['settings.save']({fingerprintDefaults:defaultValues(),fingerprintLocks:[]});
-  await js(`Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.includes('软件设置')).click()`);await until(`Boolean(document.querySelector('.defaults-panel #setting-userAgent'))`);
+  await js(`Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.includes('软件设置')).click()`);await until(`Boolean(document.querySelector('.defaults-panel'))`);
   await js(`Array.from(document.querySelectorAll('.defaults-panel .advanced-nav button')).find(b=>b.textContent.includes('语言 / 时区')).click()`);
   await js(`(()=>{const input=document.querySelector('.defaults-panel #setting-timezone');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Asia/Shanghai');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   await until(`document.querySelector('[aria-label="时区随机时保留"]').checked`);await js(`document.querySelector('.defaults-panel .primary').click()`);await until(`document.querySelector('.defaults-panel').innerText.includes('默认指纹已保存')`);assert.equal(store.settings().fingerprintDefaults.timezone,'Asia/Shanghai');assert.ok(store.settings().fingerprintLocks?.includes('timezone'));

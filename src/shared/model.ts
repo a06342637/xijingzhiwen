@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type {ControlledFeatures} from './controlled-features';
 
 export type Verification = 'verified' | 'limited' | 'unverified' | 'unsupported';
 export type Values = Record<string, string | number | boolean>;
@@ -26,7 +27,7 @@ export interface Check {feature:string;label:string;status:Verification;expected
 export interface Report {id:string;profileId:string;profileName:string;kernelId:string;version:string;arch:string;sha256:string;createdAt:string;kind:'environment'|'upstream'|'upgrade'|'device';status:Verification;checks:Check[];observations:unknown;outputDir?:string}
 export interface DownloadProgress {id:string;label:string;received:number;total:number;phase:string;error?:string}
 export interface SoftwareUpdate {phase:'idle'|'checking'|'available'|'current'|'downloading'|'downloaded'|'installing'|'error';version?:string;notes?:string;percent:number;message:string}
-export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;fingerprintLocks?:string[];automaticUpdates?:boolean;startupDashboard?:boolean;diagnosticLinks?:boolean;inheritEnabledExtensions?:boolean;randomBookmarks?:boolean;listDefaultV2?:boolean;proxyLocaleDefaultsV1?:boolean}
+export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;fingerprintLocks?:string[];controlledFeatures?:ControlledFeatures;automaticUpdates?:boolean;startupDashboard?:boolean;diagnosticLinks?:boolean;inheritEnabledExtensions?:boolean;randomBookmarks?:boolean;listDefaultV2?:boolean;proxyLocaleDefaultsV1?:boolean}
 export interface AppState {profiles:Profile[];proxies:ProxyConfig[];proxyObservations?:ProxyObservation[];recycle?:RecycledEnvironment[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate}
 export type Reply<T=unknown>={ok:true;data:T}|{ok:false;error:string};
 export interface DesktopApi {invoke<T=unknown>(action:string,payload?:unknown):Promise<T>;onState(callback:(state:AppState)=>void):()=>void}
@@ -37,7 +38,7 @@ function feature(key:string,label:string,group:string,kind:Feature['kind'],value
 export const FEATURES:Feature[]=[
  feature('engine','浏览器引擎','身份 / User-Agent','select','chromium',undefined,'火狐使用 Camoufox 测试版；Windows ARM64 通过 x64 兼容运行。',{options:['chromium','firefox'],source:'https://github.com/daijro/camoufox'}),
  feature('deviceType','环境类型','身份 / User-Agent','select','desktop',undefined,'移动端使用 Chromium 布局模拟，不是真实 Safari、iOS 或安卓系统。',{options:['desktop','iphone','ipad','android'],status:'limited'}),
- feature('deviceModel','安卓型号展示','身份 / User-Agent','text','',undefined,'安卓 UA 与 Client Hints 使用相同型号；预设自动填写，只是展示值。',{status:'limited'}),
+ feature('deviceModel','旧版型号记录','身份 / User-Agent','text','',undefined,'旧版兼容字段；布局测试不发送型号、移动 UA 或移动 Client Hints。',{status:'limited'}),
  feature('cpuModel','CPU 预设记录','硬件 / 屏幕','text','',undefined,'仅软件内记录型号；网页通常仅能观测逻辑线程数，不能伪装真实 CPU 指令、性能或型号。',{status:'limited'}),
  feature('gpuModel','显卡预设记录','WebGL / Canvas','text','',undefined,'仅软件内记录预设型号；Vendor/Renderer 为名称覆盖，真实 GPU、WebGPU、驱动、扩展和算力保持原生。',{status:'limited'}),
  feature('hardwareRam','组合物理内存记录（GB）','硬件 / 屏幕','number',16,undefined,'组合记录；浏览器的 deviceMemory 是离散、限幅信息，不等于物理内存。火狐不提供该 API。',{min:4,max:256,status:'limited'}),

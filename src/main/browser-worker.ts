@@ -5,10 +5,11 @@ import {diagnosticPage} from './diagnostic-page';
 import {buildOptions} from '../shared/config';
 import {launchFirefox} from './firefox';
 import {firefoxCookies} from './firefox-cookies';
-import {mobileUA,mobileIdentity} from '../shared/devices';
 import {resolveProxyLocale} from './proxy-locale';
 import {checkProxyRoute} from './proxy-check';
 import {launchDashboard} from './dashboard';
+import {applyControlledProfile} from '../shared/controlled-features';
+import {mobileMetrics} from '../shared/devices';
 let resolvedGeo:unknown;
 const pageReady=new WeakMap<object,Promise<void>>();
 let context:any,profile:any,kernel:any,initial:any,dashboard:Awaited<ReturnType<typeof launchDashboard>>|undefined;
@@ -23,20 +24,20 @@ async function diagnostic(){
  finally{if(timer)clearTimeout(timer);if(page?.url()===local.url){if(reused)await page.goto('about:blank',{timeout:5000}).catch(()=>{});else await page.close().catch(()=>{});}await local.close();}
 }
 async function start(payload:any){
- profile=payload.profile;kernel=payload.kernel;initial=payload;secretValues=[payload.proxy?.password,payload.proxy?.username].filter(Boolean);
- const matched=await resolveProxyLocale(profile,payload.proxy,payload.fingerprintLocks);profile=matched.profile;resolvedGeo=matched.geo;
+ profile=applyControlledProfile(payload.profile,payload.controlledFeatures);kernel=payload.kernel;initial=payload;secretValues=[payload.proxy?.password,payload.proxy?.username].filter(Boolean);
+ const matched=await resolveProxyLocale(profile,payload.proxy,payload.fingerprintLocks);profile=applyControlledProfile(matched.profile,payload.controlledFeatures);resolvedGeo=matched.geo;
  if(payload.proxy&&matched.geo&&profile.values.randomStrategy!=='catalog')send({event:'notice',error:'已通过绑定代理匹配当前出口；供应商 DNS、TCP 特征和后续出口轮换仍需实测，建议使用固定会话。'});
  process.env.CLOAKBROWSER_BINARY_PATH=kernel.path;process.env.CLOAKBROWSER_WIDEVINE=profile.values.widevine==='disabled'?'0':'1';if(profile.values.widevine==='custom')process.env.CLOAKBROWSER_WIDEVINE_CDM=profile.values.widevinePath;
  const lib=await sdk();
- if(profile.values.engine==='firefox')context=await launchFirefox(profile,kernel.path,payload.profileDir,kernel.version,payload.proxy,payload.bookmarkPrefs);
+ if(profile.values.engine==='firefox')context=await launchFirefox(profile,kernel.path,payload.profileDir,kernel.version,payload.proxy,payload.bookmarkPrefs,payload.controlledFeatures);
  else if(profile.mode==='measured'){context=await lib.launchPersistentContext({userDataDir:payload.profileDir,headless:false,devicePool:{python:payload.python,host:profile.recordPath,records:[profile.recordPath],seed:profile.seed}} as any);}
- else {const options=buildOptions(profile,kernel.path,payload.profileDir,payload.extensions,payload.proxy);if(profile.values.deviceType!=='desktop')options.userAgent=mobileUA(profile.values,kernel.version);context=await lib.launchPersistentContext(options);
+  else {const options=buildOptions(profile,kernel.path,payload.profileDir,payload.extensions,payload.proxy,payload.controlledFeatures);context=await lib.launchPersistentContext(options);
   if(payload.extensions.length&&profile.values.deviceType==='desktop'){
    const configure=async(page:any)=>{const session=await context.newCDPSession(page);const apply=async()=>{if(page.isClosed())return;if(page.url().startsWith('chrome-extension:')){await session.send('Emulation.clearDeviceMetricsOverride');const tool=await session.send('Browser.getWindowForTarget');const main=context.pages().find((p:any)=>!p.url().startsWith('chrome-extension:'));if(main){const other=await context.newCDPSession(main);try{const primary=await other.send('Browser.getWindowForTarget');if(tool.windowId!==primary.windowId)await session.send('Browser.setWindowBounds',{windowId:tool.windowId,bounds:{width:580,height:680}});}finally{await other.detach();}}}else if(profile.values.viewportMode==='fixed')await session.send('Emulation.setDeviceMetricsOverride',{width:Number(profile.values.viewportWidth),height:Number(profile.values.viewportHeight),deviceScaleFactor:Number(profile.values.deviceScale),screenWidth:Number(profile.values.screenWidth),screenHeight:Number(profile.values.screenHeight),mobile:false});};await apply();page.on('framenavigated',(frame:any)=>{if(frame===page.mainFrame())void apply().catch(()=>{});});page.once('close',()=>void session.detach().catch(()=>{}));};
    const ready=(page:any)=>{const task=configure(page);pageReady.set(page,task);task.catch(e=>send({event:'notice',error:safeError(e)}));return task;};for(const page of context.pages())await ready(page);context.on('page',ready);
   }
   if(profile.values.deviceType!=='desktop'){
-   const configure=async(page:any)=>{const session=await context.newCDPSession(page);try{await session.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:Number(profile.values.touch)});const identity=mobileIdentity(profile.values,kernel.version);await session.send('Emulation.setDeviceMetricsOverride',identity.metrics);const {metrics,...ua}=identity;await session.send('Emulation.setUserAgentOverride',ua);}catch(error){await session.detach();throw error;}page.once('close',()=>void session.detach().catch(()=>{}));};
+   const configure=async(page:any)=>{const session=await context.newCDPSession(page);try{await session.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:Number(profile.values.touch)});await session.send('Emulation.setDeviceMetricsOverride',mobileMetrics(profile.values));}catch(error){await session.detach();throw error;}page.once('close',()=>void session.detach().catch(()=>{}));};
    const ready=(page:any)=>{const task=configure(page);pageReady.set(page,task);task.catch(e=>send({event:'notice',error:safeError(e)}));return task;};for(const page of context.pages())await ready(page);context.on('page',ready);
   }
  }

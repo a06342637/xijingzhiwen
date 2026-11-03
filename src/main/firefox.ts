@@ -3,14 +3,17 @@ import path from 'node:path';
 import {isIP} from 'node:net';
 import {validateProfile,proxyUrl} from '../shared/config';
 import type {Profile,ProxyConfig} from '../shared/model';
+import type {ControlledFeatures} from '../shared/controlled-features';
 
 // Native Camoufox properties only. No init-script identity overrides or model downloads.
-export function firefoxIdentity(p:Profile,version:string){
+export function firefoxIdentity(p:Profile,version:string,allowed?:ControlledFeatures){
  const v=p.values,major=String(v.brandVersion||version).split('.')[0];
  const platforms:Record<string,[string,string,string]>={windows:['Windows NT 10.0; Win64; x64','Win32','Windows NT 10.0; Win64; x64'],macos:['Macintosh; Intel Mac OS X 10.15','MacIntel','Intel Mac OS X 10.15'],linux:['X11; Linux x86_64','Linux x86_64','Linux x86_64']};
  const [uaOS,platform,oscpu]=platforms[String(v.platform)];
  const ua=String(v.userAgent||`Mozilla/5.0 (${uaOS}; rv:${major}.0) Gecko/20100101 Firefox/${major}.0`);
  const config:Record<string,unknown>={'navigator.userAgent':ua,'headers.User-Agent':ua,'navigator.platform':platform,'navigator.oscpu':oscpu,'navigator.hardwareConcurrency':Number(v.cpu),'navigator.maxTouchPoints':Number(v.touch),'screen.width':Number(v.screenWidth),'screen.height':Number(v.screenHeight),'screen.availWidth':Number(v.screenWidth),'screen.availHeight':Number(v.screenHeight)-Number(v.taskbarHeight),'screen.colorDepth':24,'screen.pixelDepth':24};
+ if(allowed&&!allowed.hardwareIdentity)delete config['navigator.hardwareConcurrency'];
+ if(allowed&&!allowed.displayTesting)delete config['navigator.maxTouchPoints'];
  if(v.viewportMode!=='fixed')Object.assign(config,{'window.outerWidth':Number(v.windowWidth),'window.outerHeight':Number(v.windowHeight)});
  if(v.locale){const l=new Intl.Locale(String(v.locale));Object.assign(config,{'navigator.language':String(v.locale),'headers.Accept-Language':String(v.locale),'locale:language':l.language,'locale:all':String(v.locale)});if(l.region)config['locale:region']=l.region;}
  if(v.timezone)config.timezone=v.timezone;
@@ -32,8 +35,8 @@ export function firefoxAppearancePrefs(v:Profile['values']){
  // browsing context. Gecko's native content preference covers the new one too.
  return {'layout.css.prefers-color-scheme.content-override':v.colorScheme==='dark'?0:v.colorScheme==='light'?1:2};
 }
-export async function launchFirefox(p:Profile,binary:string,profileDir:string,version:string,proxy?:ProxyConfig,bookmarkPrefs:Record<string,string|boolean>={}){
- p=validateProfile(p);const v=p.values,config=firefoxIdentity(p,version);
+export async function launchFirefox(p:Profile,binary:string,profileDir:string,version:string,proxy?:ProxyConfig,bookmarkPrefs:Record<string,string|boolean>={},allowed?:ControlledFeatures){
+ p=validateProfile(p);const v=p.values,config=firefoxIdentity(p,version,allowed);
  if(proxy&&(v.geoip||v.webrtcMode==='auto')){
   if(!proxy)throw new Error('按出口匹配需要有效代理');const lib=await import('@xiaoxiaofeihh/chromix');const geo=await lib.maybeResolveGeoip(true,{server:proxyUrl(proxy),username:proxy.username||undefined,password:proxy.password||undefined},undefined,undefined,[]) as any;
   if(!v.locale&&geo.locale){const l=new Intl.Locale(geo.locale);Object.assign(config,{'navigator.language':geo.locale,'headers.Accept-Language':geo.locale,'locale:language':l.language,'locale:all':geo.locale});if(l.region)config['locale:region']=l.region;}

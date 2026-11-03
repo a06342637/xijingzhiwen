@@ -1,4 +1,5 @@
 import {normalizePersona} from '../shared/browser-persona';
+import {controlledDefaults} from '../shared/controlled-features';
 import initSqlJs, {type Database} from 'sql.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -49,7 +50,7 @@ export class Store {
  recycled(){return this.all<RecycledEnvironment>('recycle');}
  private recycleDir(id:string){if(!/^[0-9a-f-]{36}$/i.test(id))throw new Error('回收记录标识无效');return inside(this.root,'trash','environments',id);}
  async proxy(id:string){const p=this.get<ProxyConfig>('proxy',id);const st=this.db.prepare('SELECT data FROM secrets WHERE id=?');st.bind([id]);const encrypted=st.step()?st.getAsObject().data as string:undefined;st.free();if(encrypted)p.password=await this.crypto.decryptString(Buffer.from(encrypted,'base64'));return p;}
- settings():AppState['settings']{let saved:Partial<AppState['settings']>={};try{saved=this.get('settings','app');}catch{}return {view:'list',theme:'system',maxBrowsers:5,automaticUpdates:true,startupDashboard:true,diagnosticLinks:true,inheritEnabledExtensions:true,randomBookmarks:true,...saved,...(!saved.listDefaultV2?{view:'list' as const}:{}),listDefaultV2:true,proxyLocaleDefaultsV1:true,fingerprintDefaults:{...defaultValues(),...saved.fingerprintDefaults,...(!saved.proxyLocaleDefaultsV1?{geoip:true}:{})}};}
+ settings():AppState['settings']{let saved:Partial<AppState['settings']>={};try{saved=this.get('settings','app');}catch{}return {view:'list',theme:'system',maxBrowsers:5,automaticUpdates:true,startupDashboard:true,diagnosticLinks:true,inheritEnabledExtensions:true,randomBookmarks:true,...saved,...(!saved.listDefaultV2?{view:'list' as const}:{}),listDefaultV2:true,proxyLocaleDefaultsV1:true,controlledFeatures:{...controlledDefaults(),...saved.controlledFeatures},fingerprintDefaults:{...defaultValues(),...saved.fingerprintDefaults,...(!saved.proxyLocaleDefaultsV1?{geoip:true}:{})}};}
  cloneProfile(id:string){const p=this.get<Profile>('profile',id);const now=new Date().toISOString();const copy=this.copyWithId(p,now);return this.put('profile',copy.id,copy);}
  private copyWithId(p:Profile,now:string){return {...p,id:randomUUID(),name:p.name.slice(0,75)+' · 副本',downloadDir:'',seed:newSeed(),archived:false,createdAt:now,updatedAt:now,lastStartedAt:undefined};}
  async deleteProfile(id:string,now=Date.now(),permanent=false){
