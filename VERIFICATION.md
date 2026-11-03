@@ -7,7 +7,7 @@
 - Computer-use工具本机初始化报os error 3，未执行桌面键盘实测；浏览器原生配置和本地启动检查作为本次证据。Google网站可达性受网络/代理影响，未承诺直连中国网络可访问。
 - Chromium首次初始化标记只有成功后写入，失败提示但保留可用浏览器，重试初始化；后续用户更换搜索引擎不被覆盖。Firefox策略按内核共享，兼容原上游策略限制。实测设备模式不插入临时设置页。
 - 本地ARM64和x64两个Chromix内核分别启动、设置、关闭和重启，原生默认搜索仍为Google；没有搜索偏好重置提示记录，证据 .verification/search-restart/arm64.json 和 x64.json（x64在ARM64宿主兼容运行）。默认扩展与随机书签在接入搜索初始化后仍通过真实两引擎启动回归，证据 .verification/search-browser-final/smoke.json。
-- 双架构安装包和在线更新发布后补记。
+- GitHub Actions 41606806625 两个原生架构runner的121项测试、生产打包和安装版检查通过；通过scripts/publish.mjs完整草稿附件校验后公开0.1.17。ARM64安装包147,610,843字节、x64安装包153,538,369字节，各有独立更新清单及blockmap。真实GitHub updater分别检查并下载0.1.17正确架构安装包，SHA-512校验通过，证据 .verification/github-update/result.json 和 updater.log；未在用户数据上执行测试安装。
 
 # 栖境 0.1.16 发布验证
 
