@@ -1,3 +1,12 @@
+# 栖境 0.1.14 发布前复查
+
+日期：2026-11-03。合并此前只同步源码的修复，准备 Windows ARM64/x64 新发行；发行、真实在线更新与安装结果在完成后补记。
+
+- 108 项测试、TypeScript 与生产构建通过；从独立测试目录重新运行环境全选/批量删除/回收恢复及彻底删除、代理粘贴自动/手动测试、列表国家与平台字段、共用代理另存、内核并行、首页设置开关及 Chromium Cookie/localStorage/下载/扩展/HTTP 认证代理回归，全部通过。最终 0.1.14 再测 16 项全部通过，证据 `.verification/release-014-final/smoke.json`（前次 `.verification/release-014-regression/smoke.json`）。
+- Chromium 与 Firefox 首页再次验证：自动请求只为 Who 出口 JSON，详细站点仅手动图标，中文信息、入口关闭、刷新及 Whoer 打开通过。证据 `.verification/homepage-audit/chromium-1793673969410/`、`.verification/homepage-audit/firefox-1793673969183/`。固定响应用于 UI 行为验证，真实代理网络证据见下文各专项记录。
+- 发布流程增加两种原生 runner 的安装版新界面回归，以及按需 Python/C++ DLL/greenlet/Playwright/Pillow和工具导入自检。当前真实 GPU 验收仍受本机环境限制，不提前把 CI 当作所有指纹通过。
+- 新发行保留环境、SQLite 数据、固定身份和内核绑定；旧版缺配置记录的保留目录不自动删除。回收过期清理有真实生效语义（运行时/下次打开），手动彻底删除不可恢复。
+
 # 环境回收、代理列表与网关对照（尚未发行）
 
 日期 2026-11-03，Windows ARM64。本轮同步源码，不创建发行标签，安装版仍需后续新发行才能应用。
