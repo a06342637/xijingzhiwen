@@ -39,7 +39,7 @@ test('random personas stay valid and preserve explicit network/locale/experiment
 test('batch names, ids, seeds and limits; measured/custom directories guarded',()=>{
  const p=newProfile(randomUUID(),'123');p.name='环境';p.values.locale='ja-JP';
  const copies=prepareProfileBatch({profile:p,count:100,randomize:true});
- assert.equal(new Set(copies.map(x=>x.seed)).size,100);assert.equal(new Set(copies.map(x=>x.id)).size,100);assert.equal(copies[0].name,'环境 001');assert.equal(copies[99].name,'环境 100');assert.ok(copies.every(x=>x.downloadDir===''&&x.proxyId===p.proxyId));assert.ok(new Set(copies.map(x=>x.values.locale)).size>1);
+ assert.equal(new Set(copies.map(x=>x.seed)).size,100);assert.equal(new Set(copies.map(x=>x.id)).size,100);assert.equal(new Set(copies.map(x=>x.name)).size,100);assert.ok(copies.every(x=>x.name.length>0&&x.name!=='环境'));assert.ok(copies.every(x=>x.downloadDir===''&&x.proxyId===p.proxyId));assert.ok(new Set(copies.map(x=>x.values.locale)).size>1);
  assert.equal(prepareProfileBatch({profile:p,count:1,randomize:false})[0].seed,p.seed);
  assert.throws(()=>prepareProfileBatch({profile:p,count:101,randomize:false}));
  assert.throws(()=>prepareProfileBatch({profile:{...p,downloadDir:'C:/shared'},count:2,randomize:false}),/独立目录/);

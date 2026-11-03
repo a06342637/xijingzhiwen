@@ -5,6 +5,7 @@ import {fileLogger,guardOutputPipes} from './file-log';
 import {SoftwareUpdates} from './software-update';
 import {validateSettingsPatch} from './settings';
 import {prepareProfileBatch} from './profile-batch';
+import {randomProfileName} from './profile-names';
 import {FIREFOX_VERSION} from '../shared/devices';
 import {enabledExtensionIds} from '../shared/extension-defaults';
 import {randomFullFingerprint} from '../shared/random-fingerprint';
@@ -18,12 +19,14 @@ import {Store,inside,newSeed} from './store';
 import {Kernels} from './kernels';
 import {Components} from './components';
 import {Browsers} from './browsers';
+import {WindowLayouts} from './window-layout';
 import {importExtension} from './extensions';
 import {validateProfile,proxyUrl} from '../shared/config';
 import {CAPABILITIES,BASE_VERSION,idSchema,proxySchema,newProfile,type AppState,type Profile,type Kernel,type Extension,type DownloadProgress,type Report} from '../shared/model';
 
 let window:BrowserWindow|undefined,store:Store,kernels:Kernels,components:Components,browsers:Browsers,closing=false,closePending=false,allowUpdateQuit=false;
 let softwareUpdates:SoftwareUpdates;
+let windowLayouts:WindowLayouts;
 const progress=new Map<string,DownloadProgress>();let notice='';
 const devDir=path.resolve(__dirname,'..');
 const resources=app.isPackaged?process.resourcesPath:path.join(devDir,'vendor-resources');
@@ -47,7 +50,7 @@ async function testProxy(proxy:ProxyConfig,persist:boolean){const result=await b
 const handlers:Record<string,(p:any)=>Promise<any>>={
  state:async()=>state(),
  'profile.new':async()=>{const defaults=store.settings().fingerprintDefaults;const compatible=store.kernels().filter(k=>(k.engine||'chromium')===defaults.engine);const profile=newProfile(randomUUID(),newSeed(),compatible.find(k=>k.arch===process.arch)?.id||compatible[0]?.id||'',defaults);profile.extensionIds=enabledExtensionIds(store.settings(),store.extensions(),profile.values);return profile;},
- 'profile.randomize':async p=>{if(process.env.QIJING_SMOKE&&process.env.QIJING_SMOKE_DEEP_UI==='1')await new Promise(r=>setTimeout(r,500));return {seed:newSeed(),values:randomFullFingerprint(validateSettingsPatch({fingerprintDefaults:p.values},store.settings()).fingerprintDefaults)};},
+ 'profile.randomize':async p=>{if(process.env.QIJING_SMOKE&&process.env.QIJING_SMOKE_DEEP_UI==='1')await new Promise(r=>setTimeout(r,500));return {name:randomProfileName([...store.profiles().map(x=>x.name),...(typeof p.name==='string'?[p.name]:[])]),seed:newSeed(),values:randomFullFingerprint(validateSettingsPatch({fingerprintDefaults:p.values},store.settings()).fingerprintDefaults)};},
  'profile.create':async raw=>{const profiles=prepareProfileBatch(raw);for(const p of profiles){if(p.kernelId){const k=store.get<Kernel>('kernel',p.kernelId);if((k.engine||'chromium')!==p.values.engine)throw new Error('环境与内核引擎不匹配');}if(p.proxyId)store.get('proxy',p.proxyId);p.extensionIds.forEach(id=>store.get('extension',id));}if(profiles.some(p=>p.values.canvasBridge||p.values.runtimeSuppression||p.values.synthetic)&&!await confirm('启用实验设置？','这些环境将使用你选择的实验配置，可能影响网页行为、诊断或沙箱保护。'))return {canceled:true};if(closing)throw new Error('软件正在关闭');return {profiles:store.createProfiles(profiles)};},
  'profile.save':async raw=>{const p=validateProfile(raw);assertIdle(p.id);if(p.kernelId){const k=store.get<Kernel>('kernel',p.kernelId);if((k.engine||'chromium')!==p.values.engine)throw new Error('环境与内核引擎不匹配');}if(p.proxyId)store.get('proxy',p.proxyId);p.extensionIds.forEach(id=>store.get('extension',id));let previous:Profile|undefined;try{previous=store.get('profile',p.id);}catch{}if(previous&&previous.kernelId&&previous.kernelId!==p.kernelId)throw new Error('已有环境请通过“升级验证副本”更换内核，避免原始登录数据被新版改写');if(previous&&(previous.values.engine||'chromium')!==p.values.engine)throw new Error('已有环境不能更换引擎，请新建环境');if(previous&&previous.mode!==p.mode)throw new Error('普通与实测模式使用不同环境，请新建环境');if(p.values.userAgent&&!previous?.values.userAgent&&!await confirm('保存手动 User-Agent？','手动 UA 可能与原生 Client Hints 不一致。可以在诊断中心核对实际值。'))return {canceled:true};if((p.values.canvasBridge||p.values.runtimeSuppression||p.values.synthetic)&&!await confirm('启用实验设置？',p.values.canvasBridge?'Canvas Bridge 会关闭相关渲染器沙箱并向所填服务发送图形操作。其他实验项也可能影响稳定性。':'实验设置可能改变网页行为或破坏诊断。'))return {canceled:true};if(closing)throw new Error('软件正在关闭');assertIdle(p.id);p.updatedAt=new Date().toISOString();p.createdAt=previous?.createdAt||p.updatedAt;p.lastStartedAt=previous?.lastStartedAt;return store.put('profile',p.id,p);},
  'profile.clone':async p=>store.cloneProfile(stringId(p)),
@@ -59,6 +62,8 @@ const handlers:Record<string,(p:any)=>Promise<any>>={
  'profile.start':async p=>browsers.start(stringId(p)),
  'profile.stop':async p=>browsers.stop(stringId(p)),
  'profile.focus':async p=>browsers.focus(stringId(p)),
+ 'windows.inventory':async()=>windowLayouts.inventory(),
+ 'windows.arrange':async p=>windowLayouts.apply(p),
  'profile.batch':async p=>{const ids=z.array(idSchema).max(100).parse(p.ids);const action=z.enum(['start','stop']).parse(p.action);const results=[];for(const id of ids){try{await(action==='start'?browsers.start(id):browsers.stop(id));results.push({id,ok:true});}catch(e){results.push({id,ok:false,error:String(e)});}}return results;},
  'profile.upgrade':async p=>browsers.upgrade(stringId(p),z.string().max(120).parse(p.kernelId)),
  'profile.diagnose':async p=>browsers.diagnose(stringId(p)),
@@ -98,15 +103,15 @@ async function initialize(){
  autoUpdater.disableDifferentialDownload=true;
  autoUpdater.disableWebInstaller=true;
  if(app.isPackaged)(autoUpdater as import('electron-updater').NsisUpdater).installDirectory=path.dirname(app.getPath('exe'));
- softwareUpdates=new SoftwareUpdates(autoUpdater,app.isPackaged,changed,async()=>{if(kernels.preparing||components.preparing||browsers.operating||store.saving)throw new Error('请先等待内核下载、诊断或数据操作完成');if(closePending)throw new Error('软件正在处理关闭请求');closing=true;try{await browsers.stopAll();}catch(e){closing=false;throw e;}},()=>store.settings().automaticUpdates!==false,()=>{closing=false;changed();});
+ softwareUpdates=new SoftwareUpdates(autoUpdater,app.isPackaged,changed,async()=>{if(kernels.preparing||components.preparing||browsers.operating||store.saving||windowLayouts?.arranging)throw new Error('请先等待内核下载、诊断或数据操作完成');if(closePending)throw new Error('软件正在处理关闭请求');closing=true;try{await browsers.stopAll();}catch(e){closing=false;throw e;}},()=>store.settings().automaticUpdates!==false,()=>{closing=false;changed();});
  updateLifecycle.on('before-quit-for-update',()=>{allowUpdateQuit=true;store.close();});
- store=new Store(app.getPath('userData'),{isEncryptionAvailable:()=>safeStorage.isAsyncEncryptionAvailable(),encryptString:s=>safeStorage.encryptStringAsync(s),decryptString:async b=>(await safeStorage.decryptStringAsync(b)).result});await store.init();const emit=(p:DownloadProgress)=>{progress.set(p.id,p);changed();};kernels=new Kernels(store,emit);components=new Components(store,resources,emit,changed);browsers=new Browsers(store,kernels,path.join(__dirname,'browser-worker.cjs'),changed,()=>components.ensure(),s=>{notice=s;changed();});nativeTheme.themeSource=store.settings().theme;
+ store=new Store(app.getPath('userData'),{isEncryptionAvailable:()=>safeStorage.isAsyncEncryptionAvailable(),encryptString:s=>safeStorage.encryptStringAsync(s),decryptString:async b=>(await safeStorage.decryptStringAsync(b)).result});await store.init();const emit=(p:DownloadProgress)=>{progress.set(p.id,p);changed();};kernels=new Kernels(store,emit);components=new Components(store,resources,emit,changed);browsers=new Browsers(store,kernels,path.join(__dirname,'browser-worker.cjs'),changed,()=>components.ensure(),s=>{notice=s;changed();});windowLayouts=new WindowLayouts(store,browsers,path.join(resources,'config','window-layout.ps1'));nativeTheme.themeSource=store.settings().theme;
  await store.purgeExpired();const recycleTimer=setInterval(()=>{if(!closing)void store.purgeExpired().then(results=>{if(results.length)changed();}).catch(()=>{});},60000);recycleTimer.unref();app.once('before-quit',()=>clearInterval(recycleTimer));
  ipcMain.handle('qijing:request',async(event,action,payload)=>{try{if(!window||event.sender!==window.webContents||!event.senderFrame||event.senderFrame!==window.webContents.mainFrame)throw new Error('请求来源无效');if(closing)throw new Error('软件正在关闭');if(typeof action!=='string'||!Object.hasOwn(handlers,action))throw new Error('操作不受支持');const data=await handlers[action](payload);if(!closing)changed();return {ok:true,data};}catch(error){return {ok:false,error:error instanceof Error?error.message:String(error)};}});
  window=new BrowserWindow({width:1280,height:880,minWidth:860,minHeight:650,title:'栖境',icon:path.join(resources,'config','icon.png'),backgroundColor:'#f6f7f9',show:!process.env.QIJING_SMOKE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.on('will-attach-webview',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
  await window.loadFile(path.join(__dirname,'index.html'));if(!process.env.QIJING_SMOKE){window.show();if(app.isPackaged&&store.settings().automaticUpdates!==false){const timer=setTimeout(()=>{if(!closing)void softwareUpdates.check().catch(error=>{notice='检查软件更新失败：'+String(error);changed();});},5000);timer.unref();window.once('closed',()=>clearTimeout(timer));}}
- window.on('close',event=>{if(allowUpdateQuit)return;event.preventDefault();if(closing||closePending)return;closePending=true;void(async()=>{if(kernels.preparing||components.preparing||browsers.operating||store.saving)throw new Error('内核或诊断组件正在下载、验证或采集，请完成后关闭');if(Object.keys(browsers.running()).length&&!await confirm('关闭栖境并关闭浏览器？','正在运行的环境会正常关闭，登录数据由浏览器保存。'))return;closing=true;await browsers.stopAll();store.close();window?.destroy();app.quit();})().catch(error=>{closing=false;notice=error instanceof Error?error.message:String(error);changed();}).finally(()=>{closePending=false;});});
+ window.on('close',event=>{if(allowUpdateQuit)return;event.preventDefault();if(closing||closePending)return;closePending=true;void(async()=>{if(kernels.preparing||components.preparing||browsers.operating||store.saving||windowLayouts?.arranging)throw new Error('内核或诊断组件正在下载、验证或采集，请完成后关闭');if(Object.keys(browsers.running()).length&&!await confirm('关闭栖境并关闭浏览器？','正在运行的环境会正常关闭，登录数据由浏览器保存。'))return;closing=true;await browsers.stopAll();store.close();window?.destroy();app.quit();})().catch(error=>{closing=false;notice=error instanceof Error?error.message:String(error);changed();}).finally(()=>{closePending=false;});});
  if(process.env.QIJING_SMOKE){try{const {runSmoke}=await import('./smoke-internal');await runSmoke({store,kernels,browsers,components,window,state,handlers});app.exit(0);}catch(error){const output=path.resolve(process.env.QIJING_SMOKE_OUTPUT||path.join(devDir,'.verification'));await fs.mkdir(output,{recursive:true});await fs.writeFile(path.join(output,'smoke-error.txt'),String(error instanceof Error?error.stack:error));await browsers.stopAll();app.exit(1);}}
 }
 app.on('window-all-closed',()=>app.quit());
