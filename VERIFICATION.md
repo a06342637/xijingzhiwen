@@ -6,6 +6,7 @@
 - Camoufox内核原策略删除常用搜索引擎并指定None；只替换SearchEngines策略，原文件备份保存，其他更新/隐私策略保留。真实Firefox保存的search.json.mozlz4解码确认appDefaultEngineId为policy-Google，prefs记载普通/隐私默认Google。该内核about:preferences导航未达到完成事件，没有把此页面截屏/手动地址栏输入称为通过。
 - Computer-use工具本机初始化报os error 3，未执行桌面键盘实测；浏览器原生配置和本地启动检查作为本次证据。Google网站可达性受网络/代理影响，未承诺直连中国网络可访问。
 - Chromium首次初始化标记只有成功后写入，失败提示但保留可用浏览器，重试初始化；后续用户更换搜索引擎不被覆盖。Firefox策略按内核共享，兼容原上游策略限制。实测设备模式不插入临时设置页。
+- 本地ARM64和x64两个Chromix内核分别启动、设置、关闭和重启，原生默认搜索仍为Google；没有搜索偏好重置提示记录，证据 .verification/search-restart/arm64.json 和 x64.json（x64在ARM64宿主兼容运行）。默认扩展与随机书签在接入搜索初始化后仍通过真实两引擎启动回归，证据 .verification/search-browser-final/smoke.json。
 - 双架构安装包和在线更新发布后补记。
 
 # 栖境 0.1.16 发布验证
