@@ -6,7 +6,7 @@ import {SoftwareUpdates} from './software-update';
 import {validateSettingsPatch} from './settings';
 import {prepareProfileBatch} from './profile-batch';
 import {FIREFOX_VERSION} from '../shared/devices';
-import {randomFingerprint} from '../shared/random-fingerprint';
+import {randomFullFingerprint} from '../shared/random-fingerprint';
 import type {ProxyConfig,ProxyObservation} from '../shared/model';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -46,7 +46,7 @@ async function testProxy(proxy:ProxyConfig,persist:boolean){const result=await b
 const handlers:Record<string,(p:any)=>Promise<any>>={
  state:async()=>state(),
  'profile.new':async()=>{const defaults=store.settings().fingerprintDefaults;const compatible=store.kernels().filter(k=>(k.engine||'chromium')===defaults.engine);return newProfile(randomUUID(),newSeed(),compatible.find(k=>k.arch===process.arch)?.id||compatible[0]?.id||'',defaults);},
- 'profile.randomize':async p=>{if(process.env.QIJING_SMOKE&&process.env.QIJING_SMOKE_DEEP_UI==='1')await new Promise(r=>setTimeout(r,500));return {seed:newSeed(),values:randomFingerprint(validateSettingsPatch({fingerprintDefaults:p.values},store.settings()).fingerprintDefaults)};},
+ 'profile.randomize':async p=>{if(process.env.QIJING_SMOKE&&process.env.QIJING_SMOKE_DEEP_UI==='1')await new Promise(r=>setTimeout(r,500));return {seed:newSeed(),values:randomFullFingerprint(validateSettingsPatch({fingerprintDefaults:p.values},store.settings()).fingerprintDefaults)};},
  'profile.create':async raw=>{const profiles=prepareProfileBatch(raw);for(const p of profiles){if(p.kernelId){const k=store.get<Kernel>('kernel',p.kernelId);if((k.engine||'chromium')!==p.values.engine)throw new Error('环境与内核引擎不匹配');}if(p.proxyId)store.get('proxy',p.proxyId);p.extensionIds.forEach(id=>store.get('extension',id));}if(profiles.some(p=>p.values.canvasBridge||p.values.runtimeSuppression||p.values.synthetic)&&!await confirm('启用实验设置？','这些环境将使用你选择的实验配置，可能影响网页行为、诊断或沙箱保护。'))return {canceled:true};if(closing)throw new Error('软件正在关闭');return {profiles:store.createProfiles(profiles)};},
  'profile.save':async raw=>{const p=validateProfile(raw);assertIdle(p.id);if(p.kernelId){const k=store.get<Kernel>('kernel',p.kernelId);if((k.engine||'chromium')!==p.values.engine)throw new Error('环境与内核引擎不匹配');}if(p.proxyId)store.get('proxy',p.proxyId);p.extensionIds.forEach(id=>store.get('extension',id));let previous:Profile|undefined;try{previous=store.get('profile',p.id);}catch{}if(previous&&previous.kernelId&&previous.kernelId!==p.kernelId)throw new Error('已有环境请通过“升级验证副本”更换内核，避免原始登录数据被新版改写');if(previous&&(previous.values.engine||'chromium')!==p.values.engine)throw new Error('已有环境不能更换引擎，请新建环境');if(previous&&previous.mode!==p.mode)throw new Error('普通与实测模式使用不同环境，请新建环境');if(p.values.userAgent&&!previous?.values.userAgent&&!await confirm('保存手动 User-Agent？','手动 UA 可能与原生 Client Hints 不一致。可以在诊断中心核对实际值。'))return {canceled:true};if((p.values.canvasBridge||p.values.runtimeSuppression||p.values.synthetic)&&!await confirm('启用实验设置？',p.values.canvasBridge?'Canvas Bridge 会关闭相关渲染器沙箱并向所填服务发送图形操作。其他实验项也可能影响稳定性。':'实验设置可能改变网页行为或破坏诊断。'))return {canceled:true};if(closing)throw new Error('软件正在关闭');assertIdle(p.id);p.updatedAt=new Date().toISOString();if(previous)p.createdAt=previous.createdAt;return store.put('profile',p.id,p);},
  'profile.clone':async p=>store.cloneProfile(stringId(p)),

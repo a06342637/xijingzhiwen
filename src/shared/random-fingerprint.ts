@@ -1,5 +1,8 @@
 import type {Values} from './model';
 import {compatibleHardware,applyHardware} from './hardware';
+import {defaultValues,FEATURES} from './model';
+import {DEVICES,SCREEN_PRESETS,applyDevice,fieldSupported} from './devices';
+import {regionalWindowsFonts} from './font-presets';
 
 // Keep network/locale and experimental choices explicit. Randomize only coherent,
 // supported desktop personas; every environment also receives its own uint64 seed.
@@ -30,4 +33,30 @@ export function randomFingerprint(base:Values,random:()=>number=Math.random):Val
  if(base.hardwareRandom===false){for(const key of ['cpuModel','gpuModel','hardwareRam','cpu','memory','gpuBackend','gpuVendor','gpuRenderer'])v[key]=base[key]??v[key];return v;}
  if(consistent){v.cpu=pick([4,8,12,16]);v.memory='8';v.hardwareRam=16;return v;}
  const choices=compatibleHardware(v);return choices.length?applyHardware(v,pick(choices)):v;
+}
+
+// Explicit broad randomization for the user-facing button and new batches.
+// Keep the selected engine/device family and network route valid. External file
+// paths, real IPs and sandbox-changing experiments cannot be invented.
+export function randomFullFingerprint(base:Values,random:()=>number=Math.random):Values{
+ const pick=<T,>(items:readonly T[])=>items[Math.min(items.length-1,Math.floor(random()*items.length))];
+ const locales=[['en-US','America/New_York'],['en-CA','America/Toronto'],['ja-JP','Asia/Tokyo'],['th-TH','Asia/Bangkok'],['zh-CN','Asia/Shanghai'],['en-GB','Europe/London'],['de-DE','Europe/Berlin'],['fr-FR','Europe/Paris'],['ko-KR','Asia/Seoul'],['en-AU','Australia/Sydney']] as const;
+ const [locale,timezone]=pick(locales),network={geoip:base.geoip,webrtcMode:base.webrtcMode,webrtcIp:base.webrtcIp,webrtcPolicy:base.webrtcPolicy};
+ let v:Values={...defaultValues(),...base,...network,identityMode:'seeded',locale,timezone,userAgent:'',brandVersion:'',platformVersion:'',hardwareRandom:true,randomStrategy:'broad'};
+ if(base.deviceType&&base.deviceType!=='desktop'){
+  const choices=DEVICES.filter(d=>d.type===base.deviceType);v=applyDevice(v,pick(choices).id,random()<.2);
+  for(const key of ['colorScheme','forcedColors','reduced-motion'] as const)v[key]=key==='colorScheme'?pick(['light','dark']):key==='forcedColors'?pick(['none','none','active']):pick(['true','false']);
+  v.thirdPartyCookies=random()<.5;return v;
+ }
+ v.platform=pick(['windows','macos','linux']);v.platformVersion=v.platform==='windows'?pick(['10.0.0','15.0.0','19.0.0']):'';v.brand=base.engine==='firefox'?'Firefox':pick(['Chrome','Edge','Opera','Vivaldi']);
+ const [w,h]=pick(SCREEN_PRESETS);const dpr=pick(['1','1.25','1.5','2']);v.deviceScale=dpr;v.screenWidth=w;v.screenHeight=h;v.taskbarHeight=v.platform==='windows'?pick([40,48]):v.platform==='macos'?25:pick([28,40,48]);
+ v.windowWidth=Math.min(w-32,pick([1000,1120,1280,1360,1440,1600]));v.windowHeight=Math.min(h-Number(v.taskbarHeight)-32,pick([640,720,800,860,960]));v.viewportMode=pick(['native','fixed']);v.viewportWidth=Math.max(320,Number(v.windowWidth)-16);v.viewportHeight=Math.max(240,Number(v.windowHeight)-100);v.maximized=false;
+ v.colorScheme=pick(['light','dark']);v.contrast=pick(['no-preference','more','less']);v.forcedColors=pick(['none','none','active']);for(const k of ['reduced-motion','reduced-transparency','inverted-colors'])v[k]=pick(['true','false']);
+ v.touch=v.platform==='windows'?pick([0,0,0,5,10]):0;v.pointer=Number(v.touch)>0?pick(['fine','coarse']):'fine';v.hover=v.pointer==='coarse'?'none':pick(['hover','none']);v.timer=pick([0,0,1,2,5,10]);v.quota=pick([20480,51200,102400,204800,512000]);v.thirdPartyCookies=random()<.5;
+ v.noise=true;v.pixelNoise=pick(['native','seeded']);v.audioRender=pick(['native','isolated']);v.audioSeed=v.audioRender==='isolated'?String(1+Math.floor(random()*Number.MAX_SAFE_INTEGER)):'';
+ for(const codec of ['h264','vp8','vp9','av1','hevc'])v['codec_'+codec]=pick(['native','native','disabled']);v.widevine=pick(['auto','disabled']);v.widevinePath='';v.fontsDir='';v.windowsFontMetrics=false;
+ if(v.platform==='windows')v=regionalWindowsFonts(v,locale);else {v.fontPolicy='restricted';v.fontWhitelist=v.platform==='macos'?pick(['Arial,Helvetica,Times New Roman,Courier New','Arial,Helvetica,Georgia,Verdana']):pick(['Arial,DejaVu Sans,DejaVu Serif,DejaVu Sans Mono','Liberation Sans,Liberation Serif,Liberation Mono,Arial']);}
+ const hardware=compatibleHardware(v);if(hardware.length)v=applyHardware(v,pick(hardware));
+ for(const f of FEATURES)if(f.experimental||!fieldSupported(f.key,v))v[f.key]=f.default;
+ return v;
 }

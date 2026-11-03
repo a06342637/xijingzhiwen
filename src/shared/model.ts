@@ -42,7 +42,7 @@ export const FEATURES:Feature[]=[
  feature('gpuModel','显卡预设记录','WebGL / Canvas','text','',undefined,'仅软件内记录预设型号；Vendor/Renderer 为名称覆盖，真实 GPU、WebGPU、驱动、扩展和算力保持原生。',{status:'limited'}),
  feature('hardwareRam','组合物理内存记录（GB）','硬件 / 屏幕','number',16,undefined,'组合记录；浏览器的 deviceMemory 是离散、限幅信息，不等于物理内存。火狐不提供该 API。',{min:4,max:256,status:'limited'}),
  feature('hardwareRandom','随策略随机硬件参数','硬件 / 屏幕','toggle',true,undefined,'推荐策略只随机线程数并保留原生 GPU；组合策略随机型号库。关闭保留手选硬件；移动模式保持自身配置。',{status:'limited'}),
- feature('randomStrategy','随机生成策略','硬件 / 屏幕','select','consistent',undefined,'默认一致性优先：保留内核品牌和原生 GPU，避免型号与真实架构/能力冲突；硬件组合模式使用型号库。两者均不保证检测满分。',{options:['consistent','catalog'],status:'limited'}),
+ feature('randomStrategy','随机生成策略','硬件 / 屏幕','select','consistent',undefined,'默认一致性优先：保留内核品牌和原生 GPU，避免型号与真实架构/能力冲突；硬件组合模式使用型号库。两者均不保证检测满分。',{options:['consistent','catalog','broad'],status:'limited'}),
  feature('deviceScale','设备像素比 DPR','硬件 / 屏幕','select','1',undefined,'屏幕尺寸使用 CSS/DIP 单位，物理像素约为尺寸乘 DPR。桌面固定视口时生效。',{options:['1','1.25','1.5','2','2.625','3','3.5','4'],status:'limited'}),
  feature('identityMode','身份模式','身份 / User-Agent','select','seeded',undefined,'原生对照关闭身份覆盖；语言与时区仍可显式设置。',{options:['seeded','off']}),
  feature('platform','系统展示','身份 / User-Agent','select','windows','fingerprint-platform','不会更换真实操作系统。',{options:['windows','macos','linux']}),

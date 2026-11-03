@@ -5,7 +5,7 @@ type Geo={locale?:string|null;timezone?:string|null;exitIp?:string|null};
 export function applyProxyLocale(profile:Profile,geo:Geo){
  const p=structuredClone(profile);
  if(p.values.geoip){if(!geo.locale||!geo.timezone)throw new Error('代理出口缺少语言或时区资料，无法自动匹配');p.values.locale=geo.locale;p.values.timezone=geo.timezone;}
- if(p.values.geoip&&p.values.randomStrategy!=='catalog'&&p.values.fontPolicy==='native'&&p.values.platform==='windows'&&p.values.deviceType==='desktop'&&p.values.identityMode!=='off'&&['en-CA','en-US','ja-JP','th-TH'].includes(String(geo.locale)))p.values=regionalWindowsFonts(p.values,String(geo.locale));
+ if(p.values.geoip&&p.values.randomStrategy!=='catalog'&&(p.values.fontPolicy==='native'||p.values.randomStrategy==='broad')&&p.values.platform==='windows'&&p.values.deviceType==='desktop'&&p.values.identityMode!=='off'&&['en-CA','en-US','ja-JP','th-TH'].includes(String(geo.locale)))p.values=regionalWindowsFonts(p.values,String(geo.locale));
  if(p.values.webrtcMode==='auto'){p.values.webrtcMode='custom';p.values.webrtcIp=geo.exitIp!;}
  p.values.geoip=false;return p;
 }
