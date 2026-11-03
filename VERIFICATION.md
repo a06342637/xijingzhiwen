@@ -1,3 +1,13 @@
+# 栖境 0.1.17 Google默认搜索验证
+
+日期：2026-11-03。
+
+- 121项测试及生产构建通过。Chromix内核原默认为No Search / http://%s，Google不在原生列表；通过原生设置页添加Google及搜索建议并设为默认，不直接篡改受保护的搜索偏好。核对真实原生列表Google为default且URL正确，证据 .verification/search-native2-1793695805211/chromium-result.json。
+- Camoufox内核原策略删除常用搜索引擎并指定None；只替换SearchEngines策略，原文件备份保存，其他更新/隐私策略保留。真实Firefox保存的search.json.mozlz4解码确认appDefaultEngineId为policy-Google，prefs记载普通/隐私默认Google。该内核about:preferences导航未达到完成事件，没有把此页面截屏/手动地址栏输入称为通过。
+- Computer-use工具本机初始化报os error 3，未执行桌面键盘实测；浏览器原生配置和本地启动检查作为本次证据。Google网站可达性受网络/代理影响，未承诺直连中国网络可访问。
+- Chromium首次初始化标记只有成功后写入，失败提示但保留可用浏览器，重试初始化；后续用户更换搜索引擎不被覆盖。Firefox策略按内核共享，兼容原上游策略限制。实测设备模式不插入临时设置页。
+- 双架构安装包和在线更新发布后补记。
+
 # 栖境 0.1.16 发布验证
 
 日期：2026-11-03。默认扩展、随机书签、内核下载队列和10秒提示。
@@ -6,7 +16,7 @@
 - 本地15项管理界面smoke通过：默认扩展导入/开关/设置/批量/新建选择；随机书签设置保存、队列按钮防重入、失败反馈以及重复相同提示重置10秒。队列测试采用延迟替身，无批量下载全部历史内核。证据 .verification/ui-016b/smoke.json，最终版本复测 .verification/release-016-final/。
 - 真实Chromix ARM64基线155.0.8059.79与Firefox x64候选158.0.1-beta.41（本机Windows ARM64兼容运行）：默认继承扩展发送本地请求、60书签实际加载；重启不重复、更换种子更新、关闭删除专用文件夹且保留用户书签。证据 .verification/resources-016c/smoke.json。首次火狐原生数据初始化无可见窗口，随后只启动一个供用户操作的窗口；不使用会替换用户书签的启动HTML导入。
 - GitHub两个原生架构runner将在发行时验证119项测试、安装包和管理界面；真实GPU图形和检测站评分未在本次修改中重新验证，书签不保证防关联或网站评分。
-- 双架构发行附件、摘要、在线更新结果发布后补记。软件与内核仍分开，更新保留环境数据。
+- GitHub Actions 41604946322 两个原生架构构建、119项测试及安装版检查通过。0.1.16公开附件完整；真实GitHub updater分别下载ARM64/x64安装包并通过SHA-512校验，证据 .verification/github-update/result.json。软件与内核仍分开，更新保留环境数据。
 
 # 栖境 0.1.15 发布验证
 
