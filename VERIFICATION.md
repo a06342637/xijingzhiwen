@@ -6,7 +6,7 @@
 - 管理界面隔离smoke：状态后依次创建时间/启动时间/操作，无记录显示从未、ISO真实值关联、日期时分秒展示；旧编辑内容保存不覆盖服务器的创建和启动时间。1280与860宽度截图检查通过，证据 .verification/profile-times/smoke.json。
 - 时间按本机时区显示。旧版没有记录的启动历史无法推断，不根据网站日志或文件时间编造；原创建时间保留。
 - 真实Chromix ARM64与Firefox x64（ARM64宿主兼容运行）启动回归通过：两引擎成功记录时间，Chromix进入不更新、再次启动更新；原默认扩展、Google搜索及60书签仍正常，证据 .verification/profile-times-browser/smoke.json。0.1.18管理界面最终复测通过，证据 .verification/profile-times-final/smoke.json。
-- 双架构发布、安装版检查与在线更新结果发布后补记。
+- GitHub Actions 41611768528 两架构原生runner的123项测试、生产打包及完整安装版检查通过，0.1.18全部草稿附件经scripts/publish.mjs校验后公开；ARM64安装包147,612,881字节，x64安装包153,540,253字节。真实GitHub updater检查并下载各自0.1.18安装包，SHA-512通过，证据 .verification/github-update/result.json；未对用户数据执行测试安装。
 - 首次发行CI在新增界面测试读取目标行时失败，未公开安装包；补充等待目标行刷新及完整错误信息后，本地完整组合smoke通过，证据 .verification/profile-times-all-output2/smoke.json，重新进行双架构发行检查。
 
 # 栖境 0.1.17 Google默认搜索验证
