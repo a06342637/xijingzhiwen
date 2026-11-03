@@ -5,6 +5,7 @@
 - 108 项测试、TypeScript 与生产构建通过；从独立测试目录重新运行环境全选/批量删除/回收恢复及彻底删除、代理粘贴自动/手动测试、列表国家与平台字段、共用代理另存、内核并行、首页设置开关及 Chromium Cookie/localStorage/下载/扩展/HTTP 认证代理回归，全部通过。最终 0.1.14 再测 16 项全部通过，证据 `.verification/release-014-final/smoke.json`（前次 `.verification/release-014-regression/smoke.json`）。
 - Chromium 与 Firefox 首页再次验证：自动请求只为 Who 出口 JSON，详细站点仅手动图标，中文信息、入口关闭、刷新及 Whoer 打开通过。证据 `.verification/homepage-audit/chromium-1793673969410/`、`.verification/homepage-audit/firefox-1793673969183/`。固定响应用于 UI 行为验证，真实代理网络证据见下文各专项记录。
 - 发布流程增加两种原生 runner 的安装版新界面回归，以及按需 Python/C++ DLL/greenlet/Playwright/Pillow和工具导入自检。当前真实 GPU 验收仍受本机环境限制，不提前把 CI 当作所有指纹通过。
+- 首次 ARM64 CI 安装版回收站 UI 检查失败：标题先更新而 tbody 记录仍未更新；修复维护者等待条件为目标记录出现，保持所有断言。x64 原安装版通过；本机相同组件/UI 检查再次通过，证据 `.verification/release-014-ci-repair/smoke.json`，发行流程重新运行，不跳过测试。
 - 新发行保留环境、SQLite 数据、固定身份和内核绑定；旧版缺配置记录的保留目录不自动删除。回收过期清理有真实生效语义（运行时/下次打开），手动彻底删除不可恢复。
 
 # 环境回收、代理列表与网关对照（尚未发行）
