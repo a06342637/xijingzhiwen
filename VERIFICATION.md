@@ -1,3 +1,18 @@
+# 内核并行、Python 组件与手动首页验收（尚未发行）
+
+日期 2026-11-03，Windows ARM64 本机；软件源码仍为 0.1.13，当前发行安装包不包含本节修复。源码与验证记录同步 GitHub，不创建新发行标签。
+
+- 103 项测试及 TypeScript/生产构建通过。UI 隔离 smoke 用主进程仅测试替身延迟下载响应，验证两个架构同时提交、当前项防重复、检测入口开关保存与状态中文说明；没有把替身作为真实下载证据。后台原有独立 staging/摘要校验不变。证据 `.verification/maintenance-ui-final3/`。
+- x64/ARM64 嵌入 Python 重新下载全套校验组件，greenlet 原生切换、Playwright、Pillow 导入及组件 ready 均通过。独立组件运行 collect_device.py 后两种架构都生成完整 record.json；图形检查均生成 summary.json，Canvas 通过，本机 WebGL unavailable，GPU 身份不完整，按真实条件显示受限。证据 `.verification/components-repair/*-result.json`、`.verification/components-tool-test/`；没有把原生 GPU 不可用标为通过。
+- 中文首页两引擎隔离回归：自动 HTTPS 请求只有 Who /api/me JSON，不访问完整 Who/其他详细检测站；固定数据下中文日本/神奈川/横滨/运营商/时区显示，375/1280 布局，手动 Whoer 打开、检测入口隐藏均通过。证据 `.verification/homepage-audit/`；固定响应与实际代理测试分开。
+- 用户提供的 JP1–JP5、TH1–TH5、US1–US5 各连续三次代理 GeoIP 查询均为目标地区、对应语言/时区，单次组内稳定。随后普通 curl 经同一代理跨站查询，TH2/TH3/TH5 在一组中出现不同 IPv4；多个其他节点与早先采样也换出口，JP1 有 IPv6 与 IPv4差异。它们不能保证 sessTime=5 内所有目的网站同出口。证据 `.verification/current-proxy-samples.json`、`.verification/current-cross-sites/cross-site.json`。
+- 浏览器详测 JP1 Chromium、TH1 Firefox、US1 Chromium：语言/时区对应地区，UA 与系统及篡改一致性项通过，WebRTC 均 No Leak。JP1 Who D、DNS 标美国；BrowserLeaks 65 解析器/4 ISP/1 地点，日本。TH1 Who C/出口分流，BrowserLeaks 104 解析器/5 ISP/4 地点含泰国/印度。US1 Who C、DNS 美国，BrowserLeaks 15 解析器/1 ISP/2 地点；TCP 系统推断 Android，浏览器 UA Windows。证据 `.verification/current-jp1/`、`.verification/current-th1/`、`.verification/current-us1/`。
+- 普通 curl 通过 JP3 代理访问与 Who 相同随机域名 DNS 接口，连续两次仍为美国 Rackdog 121.91.240.47，ECS 日本；TH2 返回泰国，US3 美国，直连两次为 Oracle 新加坡。该美国解析链不依赖浏览器指纹 JS，与本机直连解析器不同；不据此声称所有 DNS 流量均已验证。证据 `.verification/current-dns-transport.json`。直连浏览器 DNS 为 Oracle 新加坡，证据 `.verification/current-direct/`。
+- JP3 Chromium/TH3 Firefox 启用地区字体名单后，Who 系统语言项不再显示额外中文字体，地域/语言/时区/DNS/WebRTC/分流在该次通过，均 C；剩余额外 RTT 与稳定指纹。JP3 浏览器网络路径为代理，TH3 RTT 320ms 对服务器 12ms，软件不会伪造延迟或改原站等级。稳定环境可追踪是固定配置用途的边界。证据 `.verification/current-jp3-fonts/`、`.verification/current-th3-fonts/`。
+- 真实新首页已用 JP3 Chromium / TH3 Firefox 验证目标国家与出口信息显示，详细网站只有图标、默认不运行检测，证据 `.verification/real-home/`。Chromium 155.0.8059.79 对应源码 startup/infobar_utils.cc 确认 test-type 分支跳过启动参数提示；本次窗口截图工具启动失败，仅核对源码和实际 launch 参数，不声称原生浏览器顶部截图已通过。
+- 最终管理软件启动/Cookie/下载/扩展/代理认证及新界面检查通过，证据 `.verification/maintenance-final-all/smoke.json`。
+- HTTP 代理使用 CONNECT/TCP，不提供完整 UDP；为防直连 UDP 保持禁用 QUIC，HTTP/3 不使用属当前约束，ECH 依赖 DNS/内核支持，未打开有直连风险的替代路由。字体名单不等于语言包、语音或真实系统变更。未做 macOS/Linux 真机及原生 x64 机器的浏览器/GPU验收。
+
 # 启动总览复查（源码同步，尚未发行）
 
 日期：2026-11-03。沿用 0.1.13 版本号，按用户本轮要求同步修复源码和文档到 GitHub；不生成新发行包、不推送发行标签。已安装软件仍需后续发行才能收到这些修复。

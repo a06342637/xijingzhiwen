@@ -79,7 +79,7 @@ export function buildOptions(p:Profile,binary:string,profileDir:string,extension
  if(v.locale)options.locale=v.locale;if(v.timezone)options.timezone=v.timezone;if(v.userAgent)options.userAgent=v.userAgent;if(v.fontsDir)options.fontsDir=v.fontsDir;
  if(proxy)options.proxy={server:proxyUrl(proxy),username:proxy.username||undefined,password:proxy.password||undefined,bypass:[proxy.bypass,'localhost','127.0.0.1','[::1]'].filter(Boolean).join(',')};
  options.geoip=false; // The worker resolves once through the bound proxy, before launch.
- if(proxy)options.args.push('--disable-quic',`--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE ${proxy.host}, EXCLUDE localhost, EXCLUDE 127.0.0.1`);
+ if(proxy)options.args.push('--test-type','--disable-quic',`--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE ${proxy.host}, EXCLUDE localhost, EXCLUDE 127.0.0.1`);
  else options.args.push('--no-proxy-server');
  return options;
 }

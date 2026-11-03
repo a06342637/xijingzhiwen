@@ -40,7 +40,7 @@ async function start(payload:any){
  context.pages().forEach(attach);context.on('page',attach);
  send({event:'started'});
  if(!payload.blank){
-  if(payload.startupDashboard!==false){try{const geo=resolvedGeo as any;dashboard=await launchDashboard(context,{profileName:profile.name,engine:profile.values.engine,kernelVersion:kernel.version,architecture:kernel.arch,proxy:Boolean(payload.proxy),startup:geo?{exitIp:geo.exitIp,timezone:geo.timezone,locale:geo.locale}:undefined},async page=>{await pageReady.get(page);},safeError);}catch(error){send({event:'notice',error:'启动检测总览失败：'+safeError(error)});}}
+  if(payload.startupDashboard!==false){try{const geo=resolvedGeo as any;dashboard=await launchDashboard(context,{profileName:profile.name,engine:profile.values.engine,kernelVersion:kernel.version,architecture:kernel.arch,proxy:Boolean(payload.proxy),diagnosticLinks:payload.diagnosticLinks!==false,startup:geo?{exitIp:geo.exitIp,timezone:geo.timezone,locale:geo.locale}:undefined},async page=>{await pageReady.get(page);},safeError);}catch(error){send({event:'notice',error:'启动检测总览失败：'+safeError(error)});}}
   const active=context,urls=profile.startUrls.filter((url:string)=>!dashboard||url!=='about:blank');
   void(async()=>{const pages=active.pages();for(const [i,url] of urls.entries()){if(active.pages().length===0)return;try{const page=!dashboard&&i===0&&pages[0]?pages[0]:await active.newPage();await pageReady.get(page);await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});}catch(error){if(active.pages().length===0)return;send({event:'notice',error:safeError(error)});}}if(dashboard&&!dashboard.page.isClosed())await dashboard.page.bringToFront();})().catch(error=>send({event:'notice',error:safeError(error)}));
  }

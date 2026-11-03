@@ -33,3 +33,10 @@ electron-updater: MIT, https://github.com/electron-userland/electron-builder
 
 Firefox adapter uses a pinned second Playwright driver 1.62.0 (Apache-2.0).
 Camoufox browser: https://github.com/daijro/camoufox (MPL-2.0 and bundled third-party notices). The native property adapter is implemented in Qijing; no Camoufox Node SDK or browser binaries are bundled. Full browser license files are retained on download.
+
+Optional Python diagnostic components now download msvc-runtime 14.51.36231
+from PyPI using pinned SHA-256 for each architecture. Its Microsoft Visual C++
+DLLs are kept unmodified in the component directory and used under the Visual
+Studio Distributable Code terms. The wheel's license/metadata are retained in
+the component runtime-license directory. Runtime binaries are not bundled in
+the Qijing installer; no system-wide runtime installation is performed.

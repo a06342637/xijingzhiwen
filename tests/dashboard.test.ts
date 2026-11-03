@@ -31,7 +31,7 @@ test('dashboard token, origin, refresh exclusion, export and clean shutdown',asy
   assert.equal((await post('observation',{})).status,400);assert.equal((await post('observation',{sample,observation:{identity:{ua:'actual UA'},screen:{width:1440},webgl:{},preferences:{}},status:'complete'})).status,200);
   const runs=await Promise.all([post('run',{}),post('run',{})]);assert.deepEqual(runs.map(r=>r.status).sort(),[200,409]);assert.equal(calls,1);finish();
   assert.equal((await post('open',{id:'http://arbitrary.test'})).status,400);assert.equal((await post('open',{id:'who'})).status,200);assert.equal(opened,'who');
-  const exported=await fetch(local.url+'/export');assert.ok(exported.headers.get('content-disposition')?.includes('attachment'));const report=await exported.json();assert.equal(report.observation.identity.ua,'actual UA');assert.equal(report.sources.length,4);assert.ok(!JSON.stringify(report).includes('password'));
+  const exported=await fetch(local.url+'/export');assert.ok(exported.headers.get('content-disposition')?.includes('attachment'));const report=await exported.json();assert.equal(report.observation.identity.ua,'actual UA');assert.equal(report.sources.length,5);assert.ok(!JSON.stringify(report).includes('password'));
  }finally{finish();await local.close();await local.close();}
  await assert.rejects(()=>fetch(local.url));
 });

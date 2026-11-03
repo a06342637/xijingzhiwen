@@ -55,7 +55,14 @@
           "sha256": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
           "filename": "tzdata-2026.6-py2.py3-none-any.whl"
         }
-      ]
+      ],
+      "runtime": {
+        "name": "msvc-runtime",
+        "version": "14.51.36231",
+        "url": "https://files.pythonhosted.org/packages/e3/ab/c21892fbc87d39ebd9763759d1ee499f9938ab4ce4e49e089ea020e6aaab/msvc_runtime-14.51.36231-cp313-cp313-win_arm64.whl",
+        "sha256": "52f9fd6e089eac9d72607d3ac4ffebcd5f0d6f940fca83db8a9c12ca11b1c26c",
+        "filename": "msvc_runtime-14.51.36231-cp313-cp313-win_arm64.whl"
+      }
     },
     "x64": {
       "url": "https://www.python.org/ftp/python/3.13.9/python-3.13.9-embed-amd64.zip",
@@ -110,7 +117,15 @@
           "sha256": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
           "filename": "tzdata-2026.6-py2.py3-none-any.whl"
         }
-      ]
+      ],
+      "runtime": {
+        "name": "msvc-runtime",
+        "version": "14.51.36231",
+        "url": "https://files.pythonhosted.org/packages/c2/6e/7ba5696e9d8c1bcb01352f06e441497c308e84f75aba598400646ab31ca7/msvc_runtime-14.51.36231-cp313-cp313-win_amd64.whl",
+        "sha256": "f3c3ac4f733a774f6ae209567e533bfde6f72dc1c10977733bfe09ce01e5b624",
+        "filename": "msvc_runtime-14.51.36231-cp313-cp313-win_amd64.whl"
+      }
     }
-  }
+  },
+  "schemaVersion": 2
 }

@@ -16,3 +16,5 @@
 
 .editor-fields{border:0;padding:0;margin:0;min-width:0}
 .dashboard-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;margin-left:18px;font-size:13px;color:#335d51}.dashboard-preference input{accent-color:#26725b}
+
+.diagnostic-links-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;margin-left:18px;font-size:13px}.diagnostic-links-preference input{accent-color:#26725b}
