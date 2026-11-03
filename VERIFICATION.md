@@ -7,6 +7,7 @@
 - 时间按本机时区显示。旧版没有记录的启动历史无法推断，不根据网站日志或文件时间编造；原创建时间保留。
 - 真实Chromix ARM64与Firefox x64（ARM64宿主兼容运行）启动回归通过：两引擎成功记录时间，Chromix进入不更新、再次启动更新；原默认扩展、Google搜索及60书签仍正常，证据 .verification/profile-times-browser/smoke.json。0.1.18管理界面最终复测通过，证据 .verification/profile-times-final/smoke.json。
 - 双架构发布、安装版检查与在线更新结果发布后补记。
+- 首次发行CI在新增界面测试读取目标行时失败，未公开安装包；补充等待目标行刷新及完整错误信息后，本地完整组合smoke通过，证据 .verification/profile-times-all-output2/smoke.json，重新进行双架构发行检查。
 
 # 栖境 0.1.17 Google默认搜索验证
 
