@@ -7,7 +7,7 @@
 - Windows ARM64本机原生窗口实测：Chromix ARM64和Firefox x64两个独立窗口各占工作区一半，结果位置/尺寸正确。证据 .verification/native-tiling-1793700250286/result.json。6个Chromix测试窗口，分别测试2/3/4均分、6自动网格、最小化恢复及关闭后不再匹配，均通过。证据 .verification/tiling-many-1793700396233/result.json；不操作用户环境。
 - 窗口数量过多、浏览器最小尺寸、固定页面视口和不同虚拟桌面有实际限制；未做移动设备视口随窗口自动改写。多显示器负坐标用布局测试验证，本机真实测试为单显示器；按目标架构安装版验证后续补记。
 - 实际主进程接入：按三个栖境隔离环境匹配真实Chromium/Firefox窗口，选择其中两个平铺，第三个位置不变；关闭一个再执行会跳过已关闭窗口，证据 .verification/layout-real-main/smoke.json 和 native-window-layout.json。0.1.19完整19项管理界面smoke通过，含原回收、代理、时间、扩展和书签设置，证据 .verification/layout-final/smoke.json。安装版检查额外运行真实Windows显示器枚举验证随包辅助脚本。
-- 双架构安装包、发布附件与真实在线更新下载校验发布后补记。
+- GitHub Actions 41617115645 两个原生架构runner的126项测试、生产安装包及完整安装版回归通过（含真实Windows工作区枚举与随包脚本）。scripts/publish.mjs完整校验后公开0.1.19，ARM64安装包147,626,155字节、x64安装包153,553,595字节，更新清单独立。真实GitHub updater各自检查并下载正确架构0.1.19安装包，SHA-512校验通过，证据 .verification/github-update/result.json 和 updater.log。未在用户数据上执行测试安装。
 
 # 栖境0.1.18 环境时间列验证
 
