@@ -1,11 +1,13 @@
 # 栖境 0.1.14 发布前复查
 
-日期：2026-11-03。合并此前只同步源码的修复，准备 Windows ARM64/x64 新发行；发行、真实在线更新与安装结果在完成后补记。
+日期：2026-11-03。合并此前只同步源码的修复，v0.1.14 Windows ARM64/x64 已完整公开发行。
 
 - 108 项测试、TypeScript 与生产构建通过；从独立测试目录重新运行环境全选/批量删除/回收恢复及彻底删除、代理粘贴自动/手动测试、列表国家与平台字段、共用代理另存、内核并行、首页设置开关及 Chromium Cookie/localStorage/下载/扩展/HTTP 认证代理回归，全部通过。最终 0.1.14 再测 16 项全部通过，证据 `.verification/release-014-final/smoke.json`（前次 `.verification/release-014-regression/smoke.json`）。
 - Chromium 与 Firefox 首页再次验证：自动请求只为 Who 出口 JSON，详细站点仅手动图标，中文信息、入口关闭、刷新及 Whoer 打开通过。证据 `.verification/homepage-audit/chromium-1793673969410/`、`.verification/homepage-audit/firefox-1793673969183/`。固定响应用于 UI 行为验证，真实代理网络证据见下文各专项记录。
 - 发布流程增加两种原生 runner 的安装版新界面回归，以及按需 Python/C++ DLL/greenlet/Playwright/Pillow和工具导入自检。当前真实 GPU 验收仍受本机环境限制，不提前把 CI 当作所有指纹通过。
 - 首次 ARM64 CI 安装版回收站 UI 检查失败：标题先更新而 tbody 记录仍未更新；修复维护者等待条件为目标记录出现，保持所有断言。x64 原安装版通过；本机相同组件/UI 检查再次通过，证据 `.verification/release-014-ci-repair/smoke.json`，发行流程重新运行，不跳过测试。
+- 最终 GitHub Actions Run 41569342738 双架构 108 项测试、生产构建/打包、安装版本地中文资源、按需 Python/C++ DLL/原生扩展与工具导入、新界面全选/回收/独立代理/并行下载/设置开关检查全部通过。v0.1.14 草稿完整附件 SHA-256/SHA-512 校验后公开，双更新清单分别指向正确架构包。
+- 真实 Electron updater 从 GitHub 检查到 0.1.14，ARM64/x64 安装包均实际下载并通过 SHA-512，进程退出 0。证据 `.verification/github-update/result.json`。本轮执行安装版进程/功能 smoke 和真实更新下载，不重复 NSIS 覆盖安装迁移；历史迁移验证边界不扩大。
 - 新发行保留环境、SQLite 数据、固定身份和内核绑定；旧版缺配置记录的保留目录不自动删除。回收过期清理有真实生效语义（运行时/下次打开），手动彻底删除不可恢复。
 
 # 环境回收、代理列表与网关对照（尚未发行）
