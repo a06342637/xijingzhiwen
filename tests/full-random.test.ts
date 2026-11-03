@@ -13,7 +13,7 @@ test('broad random fingerprints vary supported identity, hardware and preference
  for(const engine of ['chromium','firefox']){
   const base=changeEngine({...defaultValues(),webrtcMode:'custom',webrtcIp:'203.0.113.9',webrtcPolicy:'disable_non_proxied_udp'},engine),samples=[];
   for(let i=0;i<300;i++){const v=randomFullFingerprint(base);const p=newProfile(randomUUID(),String(i+1));p.name='random';p.values=v;validateProfile(p);assert.equal(v.engine,engine);for(const key of ['geoip','webrtcMode','webrtcIp','webrtcPolicy'])assert.equal(v[key],base[key]);for(const key of ['synthetic','runtimeSuppression','fakeShadowRoot','canvasBridgeConsent'])assert.equal(v[key],false);assert.equal(v.canvasBridge,'');samples.push(v);}
-  for(const key of ['platform','screenWidth','windowWidth','cpuModel','gpuModel','hardwareRam','locale','timezone','colorScheme','forcedColors','reduced-motion','thirdPartyCookies'])assert.ok(new Set(samples.map(v=>v[key])).size>1,key);
+  for(const key of ['platform','screenWidth','windowWidth','cpuModel','gpuModel','hardwareRam','locale','timezone','colorScheme','reduced-motion','thirdPartyCookies'])assert.ok(new Set(samples.map(v=>v[key])).size>1,key);
   if(engine==='chromium')for(const key of ['brand','pixelNoise','audioRender','codec_h264','deviceScale','timer','quota'])assert.ok(new Set(samples.map(v=>v[key])).size>1,key);
   else assert.ok(samples.every(v=>v.brand==='Firefox'&&v.pixelNoise==='native'&&v.audioRender==='native'));
  }

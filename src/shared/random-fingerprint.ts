@@ -44,13 +44,13 @@ export function randomFullFingerprint(base:Values,random:()=>number=Math.random,
  let v:Values={...defaultValues(),...base,...network,identityMode:'seeded',locale,timezone,userAgent:'',brandVersion:'',platformVersion:'',hardwareRandom:true,randomStrategy:'broad'};
  if(base.deviceType&&base.deviceType!=='desktop'){
   const choices=DEVICES.filter(d=>d.type===base.deviceType);v=applyDevice(v,pick(choices).id,random()<.2);
-  for(const key of ['colorScheme','forcedColors','reduced-motion'] as const)v[key]=key==='colorScheme'?pick(['light','dark']):key==='forcedColors'?pick(['none','none','active']):pick(['true','false']);
+  for(const key of ['colorScheme','forcedColors','reduced-motion'] as const)v[key]=key==='colorScheme'?pick(['light','dark']):key==='forcedColors'?'none':pick(['true','false']);
   v.thirdPartyCookies=random()<.5;return {...v,...fixed};
  }
  v.platform=fixed.platform||pick(['windows','macos','linux']);v.platformVersion=v.platform==='windows'?pick(['10.0.0','15.0.0','19.0.0']):'';v.brand=base.engine==='firefox'?'Firefox':pick(['Chrome','Edge','Opera','Vivaldi']);
  const [w,h]=pick(SCREEN_PRESETS);const dpr=pick(['1','1.25','1.5','2']);v.deviceScale=dpr;v.screenWidth=w;v.screenHeight=h;v.taskbarHeight=v.platform==='windows'?pick([40,48]):v.platform==='macos'?25:pick([28,40,48]);
  v.windowWidth=Math.min(w-32,pick([1000,1120,1280,1360,1440,1600]));v.windowHeight=Math.min(h-Number(v.taskbarHeight)-32,pick([640,720,800,860,960]));v.viewportMode=pick(['native','fixed']);v.viewportWidth=Math.max(320,Number(v.windowWidth)-16);v.viewportHeight=Math.max(240,Number(v.windowHeight)-100);v.maximized=false;
- v.colorScheme=pick(['light','dark']);v.contrast=pick(['no-preference','more','less']);v.forcedColors=pick(['none','none','active']);for(const k of ['reduced-motion','reduced-transparency','inverted-colors'])v[k]=pick(['true','false']);
+ v.colorScheme=pick(['light','dark']);v.contrast='no-preference';v.forcedColors='none';v['inverted-colors']='false';for(const k of ['reduced-motion','reduced-transparency'])v[k]=pick(['true','false']);
  v.touch=v.platform==='windows'?pick([0,0,0,5,10]):0;v.pointer=Number(v.touch)>0?pick(['fine','coarse']):'fine';v.hover=v.pointer==='coarse'?'none':pick(['hover','none']);v.timer=pick([0,0,1,2,5,10]);v.quota=pick([20480,51200,102400,204800,512000]);v.thirdPartyCookies=random()<.5;
  v.noise=true;v.pixelNoise=pick(['native','seeded']);v.audioRender=pick(['native','isolated']);v.audioSeed=v.audioRender==='isolated'?String(1+Math.floor(random()*Number.MAX_SAFE_INTEGER)):'';
  for(const codec of ['h264','vp8','vp9','av1','hevc'])v['codec_'+codec]=pick(['native','native','disabled']);v.widevine=pick(['auto','disabled']);v.widevinePath='';v.fontsDir='';v.windowsFontMetrics=false;

@@ -38,6 +38,11 @@ export class Store {
   })();this.proxyWrites.set(p.id,task);const clear=()=>{if(this.proxyWrites.get(p.id)===task)this.proxyWrites.delete(p.id);};void task.then(clear,clear);return task;
  }
  private hasSecret(id:string){const st=this.db.prepare('SELECT id FROM secrets WHERE id=?');st.bind([id]);const found=st.step();st.free();return found;}
+ private removeUnusedProxy(id:string){
+  if(!id||this.profiles().some(p=>p.proxyId===id)||this.recycled().some(r=>r.profile.proxyId===id))return;
+  if(this.proxyWrites.has(id))throw new Error('关联代理正在保存，请完成后删除');
+  this.db.run("DELETE FROM objects WHERE kind IN ('proxy','proxyObservation') AND id=?",[id]);this.db.run('DELETE FROM secrets WHERE id=?',[id]);
+ }
  proxies(){return this.all<ProxyConfig>('proxy');}
  proxyObservations(){return this.all<ProxyObservation>('proxyObservation').filter(o=>this.proxies().some(p=>p.id===o.proxyId));}
  recycled(){return this.all<RecycledEnvironment>('recycle');}
@@ -46,11 +51,11 @@ export class Store {
  settings():AppState['settings']{let saved:Partial<AppState['settings']>={};try{saved=this.get('settings','app');}catch{}return {view:'list',theme:'system',maxBrowsers:5,automaticUpdates:true,startupDashboard:true,diagnosticLinks:true,inheritEnabledExtensions:true,randomBookmarks:true,...saved,...(!saved.listDefaultV2?{view:'list' as const}:{}),listDefaultV2:true,proxyLocaleDefaultsV1:true,fingerprintDefaults:{...defaultValues(),...saved.fingerprintDefaults,...(!saved.proxyLocaleDefaultsV1?{geoip:true}:{})}};}
  cloneProfile(id:string){const p=this.get<Profile>('profile',id);const now=new Date().toISOString();const copy=this.copyWithId(p,now);return this.put('profile',copy.id,copy);}
  private copyWithId(p:Profile,now:string){return {...p,id:randomUUID(),name:p.name.slice(0,75)+' · 副本',downloadDir:'',seed:newSeed(),archived:false,createdAt:now,updatedAt:now,lastStartedAt:undefined};}
- async deleteProfile(id:string,now=Date.now()){
-  if(this.deleting.has(id))throw new Error('环境正在删除');const profile=this.get<Profile>('profile',id);this.deleting.add(id);
+ async deleteProfile(id:string,now=Date.now(),permanent=false){
+  if(this.deleting.has(id))throw new Error('环境正在删除');const profile=this.get<Profile>('profile',id);if(profile.proxyId&&this.proxyWrites.has(profile.proxyId))throw new Error('关联代理正在保存，请完成后删除');this.deleting.add(id);
   const recordId=randomUUID(),dir=this.recycleDir(recordId),moved:Array<[string,string]>=[];
   try{await fs.promises.mkdir(dir,{recursive:true});for(const name of ['profiles','downloads']){const source=inside(this.root,name,id),destination=path.join(dir,name==='profiles'?'browser':'downloads');if(fs.existsSync(source)){await renameWithRetry(source,destination);moved.push([source,destination]);}}
-   const record:RecycledEnvironment={id:recordId,profile,deletedAt:new Date(now).toISOString(),expiresAt:new Date(now+3*24*60*60*1000).toISOString(),state:'recoverable',hasBrowserData:moved.some(([,p])=>p.endsWith('browser')),hasDownloads:moved.some(([,p])=>p.endsWith('downloads'))};
+   const record:RecycledEnvironment={id:recordId,profile,deletedAt:new Date(now).toISOString(),expiresAt:new Date(now+3*24*60*60*1000).toISOString(),state:permanent?'purging':'recoverable',hasBrowserData:moved.some(([,p])=>p.endsWith('browser')),hasDownloads:moved.some(([,p])=>p.endsWith('downloads'))};
    try{this.mutate(()=>{this.db.run("DELETE FROM objects WHERE kind='profile' AND id=?",[id]);this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?)',['recycle',recordId,JSON.stringify(record)]);});}catch(error){for(const [source,destination] of moved.reverse())await renameWithRetry(destination,source);throw error;}
    return path.join(dir,'browser');
   }catch(error){if(this.profiles().some(p=>p.id===id))for(const [source,destination] of moved.reverse())if(fs.existsSync(destination)&&!fs.existsSync(source))await renameWithRetry(destination,source);await fs.promises.rmdir(dir).catch(()=>{});throw error;}finally{this.deleting.delete(id);}
@@ -64,7 +69,13 @@ export class Store {
   }catch(error){for(const [source,target] of moved.reverse())if(fs.existsSync(target)&&!fs.existsSync(source))await renameWithRetry(target,source);throw error;}finally{this.recycleOperations.delete(id);this.deleting.delete(record.profile.id);}
  }
  async purgeEnvironment(id:string){
-  if(this.recycleOperations.has(id))throw new Error('回收记录正在处理');this.recycleOperations.add(id);try{const record=this.get<RecycledEnvironment>('recycle',id);this.put('recycle',id,{...record,state:'purging'});await fs.promises.rm(this.recycleDir(id),{recursive:true,force:true,maxRetries:6,retryDelay:200});const reports=this.all<Report>('report').filter(r=>r.profileId===record.profile.id);for(const report of reports){if(report.outputDir){const relative=path.relative(inside(this.root,'reports'),path.resolve(report.outputDir));if(relative&&relative!=='..'&&!relative.startsWith('..'+path.sep)&&!path.isAbsolute(relative))await fs.promises.rm(inside(this.root,'reports',relative),{recursive:true,force:true,maxRetries:6,retryDelay:200});}}this.mutate(()=>{this.db.run("DELETE FROM objects WHERE kind='recycle' AND id=?",[id]);for(const report of reports)this.db.run("DELETE FROM objects WHERE kind='report' AND id=?",[report.id]);});}finally{this.recycleOperations.delete(id);}
+  if(this.recycleOperations.has(id))throw new Error('回收记录正在处理');this.recycleOperations.add(id);try{const record=this.get<RecycledEnvironment>('recycle',id);this.put('recycle',id,{...record,state:'purging'});await fs.promises.rm(this.recycleDir(id),{recursive:true,force:true,maxRetries:6,retryDelay:200});const reports=this.all<Report>('report').filter(r=>r.profileId===record.profile.id);for(const report of reports){if(report.outputDir){const relative=path.relative(inside(this.root,'reports'),path.resolve(report.outputDir));if(relative&&relative!=='..'&&!relative.startsWith('..'+path.sep)&&!path.isAbsolute(relative))await fs.promises.rm(inside(this.root,'reports',relative),{recursive:true,force:true,maxRetries:6,retryDelay:200});}}this.mutate(()=>{this.db.run("DELETE FROM objects WHERE kind='recycle' AND id=?",[id]);for(const report of reports)this.db.run("DELETE FROM objects WHERE kind='report' AND id=?",[report.id]);this.removeUnusedProxy(record.profile.proxyId);});}finally{this.recycleOperations.delete(id);}
+ }
+ async deleteProfilePermanently(id:string){
+  await this.deleteProfile(id,Date.now(),true);
+  const record=this.recycled().find(r=>r.profile.id===id)!;
+  await this.purgeEnvironment(record.id);
+  return true;
  }
  async purgeExpired(now=Date.now()){const results=[];for(const r of this.recycled())if(r.state==='purging'||Date.parse(r.expiresAt)<=now){try{await this.purgeEnvironment(r.id);results.push({id:r.id,ok:true});}catch(e){results.push({id:r.id,ok:false,error:String(e)});}}return results;}
  close(){if(this.closed)return;this.db.close();this.closed=true;}
