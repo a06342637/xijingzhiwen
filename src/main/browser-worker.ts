@@ -24,7 +24,7 @@ async function diagnostic(){
 }
 async function start(payload:any){
  profile=payload.profile;kernel=payload.kernel;initial=payload;secretValues=[payload.proxy?.password,payload.proxy?.username].filter(Boolean);
- const matched=await resolveProxyLocale(profile,payload.proxy);profile=matched.profile;resolvedGeo=matched.geo;
+ const matched=await resolveProxyLocale(profile,payload.proxy,payload.fingerprintLocks);profile=matched.profile;resolvedGeo=matched.geo;
  if(payload.proxy&&matched.geo&&profile.values.randomStrategy!=='catalog')send({event:'notice',error:'已通过绑定代理匹配当前出口；供应商 DNS、TCP 特征和后续出口轮换仍需实测，建议使用固定会话。'});
  process.env.CLOAKBROWSER_BINARY_PATH=kernel.path;process.env.CLOAKBROWSER_WIDEVINE=profile.values.widevine==='disabled'?'0':'1';if(profile.values.widevine==='custom')process.env.CLOAKBROWSER_WIDEVINE_CDM=profile.values.widevinePath;
  const lib=await sdk();
