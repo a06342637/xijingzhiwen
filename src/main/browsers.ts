@@ -22,6 +22,7 @@ export class Browsers {
  isBusy(id:string){return this.isRunning(id)||this.operations.has(id)||this.store.deleting.has(id);}
  get operating(){return this.operations.size>0||this.store.deleting.size>0;}
  private begin(id:string){if(this.operations.has(id))throw new Error('此环境正在诊断、迁移或复制数据');this.operations.add(id);}
+ async withIdleProfile<T>(id:string,operation:()=>Promise<T>){if(this.isBusy(id)||this.shutdown)throw new Error('请先关闭环境并等待数据操作完成');this.begin(id);try{return await operation();}finally{this.operations.delete(id);}}
  private async ready(id:string){await this.starts.get(id);const r=this.runners.get(id);if(!r||r.status!=='running')throw new Error('环境尚未运行或正在关闭');return r;}
  private create(id:string,kernelId='',profile?:Profile,release?:()=>Promise<void>){
   const child=fork(this.worker,[],{execPath:process.execPath,env:{...process.env,ELECTRON_RUN_AS_NODE:'1'},stdio:['ignore','pipe','pipe','ipc'],windowsHide:true});

@@ -40,3 +40,5 @@ DLLs are kept unmodified in the component directory and used under the Visual
 Studio Distributable Code terms. The wheel's license/metadata are retained in
 the component runtime-license directory. Runtime binaries are not bundled in
 the Qijing installer; no system-wide runtime installation is performed.
+
+The bundled Chromix Node GeoIP adapter is locally extended to preserve validated country/region/city/ISP metadata for proxy display; upstream response parsing and no-direct-fallback behavior remain. This local modification is covered by its BSD-3-Clause license.

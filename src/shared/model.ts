@@ -17,6 +17,8 @@ export const profileSchema=z.object({
 export type Profile=z.infer<typeof profileSchema>;
 export const proxySchema=z.object({id:idSchema,name:z.string().trim().min(1).max(80),protocol:z.enum(['http','https','socks5']),host:z.string().trim().min(1).max(255),port:z.number().int().min(1).max(65535),username:z.string().max(512),password:z.string().max(4096).optional(),hasPassword:z.boolean().optional(),bypass:z.string().max(1024)}).strict();
 export type ProxyConfig=z.infer<typeof proxySchema>;
+export interface ProxyObservation {proxyId:string;testedAt:string;exitIp:string;country?:string;region?:string;city?:string;isp?:string;timezone?:string;locale?:string;routeStable:boolean;message:string}
+export interface RecycledEnvironment {id:string;profile:Profile;deletedAt:string;expiresAt:string;state:'recoverable'|'purging';hasBrowserData:boolean;hasDownloads:boolean}
 export interface Extension {id:string;name:string;path:string;version:string}
 export interface Kernel {id:string;engine?:'chromium'|'firefox';version:string;arch:'arm64'|'x64';path:string;sha256:string;source:'release'|'local';status:Verification;installedAt:string;provenance?:unknown}
 export interface Feature {key:string;label:string;group:string;kind:'select'|'text'|'number'|'toggle'|'directory';default:string|number|boolean;options?:string[];flag?:string;min?:number;max?:number;note:string;status:Verification;source:string;probe?:string;experimental?:boolean;platform?:string}
@@ -25,7 +27,7 @@ export interface Report {id:string;profileId:string;profileName:string;kernelId:
 export interface DownloadProgress {id:string;label:string;received:number;total:number;phase:string;error?:string}
 export interface SoftwareUpdate {phase:'idle'|'checking'|'available'|'current'|'downloading'|'downloaded'|'installing'|'error';version?:string;notes?:string;percent:number;message:string}
 export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;automaticUpdates?:boolean;startupDashboard?:boolean;diagnosticLinks?:boolean;listDefaultV2?:boolean;proxyLocaleDefaultsV1?:boolean}
-export interface AppState {profiles:Profile[];proxies:ProxyConfig[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate}
+export interface AppState {profiles:Profile[];proxies:ProxyConfig[];proxyObservations?:ProxyObservation[];recycle?:RecycledEnvironment[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate}
 export type Reply<T=unknown>={ok:true;data:T}|{ok:false;error:string};
 export interface DesktopApi {invoke<T=unknown>(action:string,payload?:unknown):Promise<T>;onState(callback:(state:AppState)=>void):()=>void}
 declare global { interface Window { qijing:DesktopApi } }
@@ -103,4 +105,4 @@ export const CAPABILITIES:Feature[]=[...FEATURES,
  feature('portableCookies','跨机原生 Cookie 数据库','能力边界','text','',undefined,'使用显式加密 Cookie 迁移，不能直接复制数据库保证登录。',{status:'unsupported'})
 ];
 export function defaultValues():Values {return Object.fromEntries(FEATURES.map(f=>[f.key,f.default]));}
-export function newProfile(id:string,seed:string,kernelId='',defaults:Values={}):Profile {const now=new Date().toISOString();return {id,seed,kernelId,name:'',group:'未分组',tags:[],notes:'',archived:false,proxyId:'',extensionIds:[],startUrls:['about:blank'],downloadDir:'',mode:'custom',recordPath:'',values:{...defaultValues(),...defaults},createdAt:now,updatedAt:now};}
+export function newProfile(id:string,seed:string,kernelId='',defaults:Values={}):Profile {const now=new Date().toISOString();return {id,seed,kernelId,name:'',group:'未分组',tags:[],notes:'',archived:false,proxyId:'',extensionIds:[],startUrls:[],downloadDir:'',mode:'custom',recordPath:'',values:{...defaultValues(),...defaults},createdAt:now,updatedAt:now};}

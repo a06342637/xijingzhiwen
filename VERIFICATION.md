@@ -1,3 +1,15 @@
+# 环境回收、代理列表与网关对照（尚未发行）
+
+日期 2026-11-03，Windows ARM64。本轮同步源码，不创建发行标签，安装版仍需后续新发行才能应用。
+
+- 最终 108 项测试和 TypeScript/生产构建通过；完整启动、Cookie/localStorage、下载、扩展、HTTP 代理认证及环境界面 smoke 通过，证据 `.verification/environment-release-source-final/smoke.json`。
+- 回收站单元/隔离测试覆盖原始种子与完整配置、浏览器/下载目录、删除时间和三天到期、重启后恢复、现存目录拒绝覆盖、数据库失败回滚、到期禁止恢复、独立报告数据清理、SQLite 删除记录及外部目录保留。运行中环境和共用依赖受保护。
+- UI smoke 通过默认代理粘贴、一次粘贴解析后自动查询与手动重测、空启动网址、实测泰国/IP展示、平台/浏览器列、独立编辑弹窗、全选批量删除、无确认窗、回收恢复/彻底删除；共用代理另存保持另一环境路由和原固定种子。代理网络测试 UI 使用维护者替身，另有真实查询证据。证据 `.verification/environment-ui-all-final/` 和 `.verification/environment-ui-painted/`，后者实际可见窗口截图复核表格/回收站。
+- 实际经 as 网关 TH2 代理连续三次返回泰国 Bangkok、True Internet、同一 IPv4及 Asia/Bangkok，country/region/city/isp由 GeoIP原始响应传递，未根据域名推测；报告无密码。证据 `.verification/gateway-country-metadata.json`。
+- 相同 TH2 与 JP3 认证会话，逐个对比 us/as/hk/global/eu 网关，两轮 Who /api/me与 ipify、另查随机域名 DNS：TH2 us轮换，as/hk/global/eu在该短组中IPv4一致；出口都仍泰国。JP3 us/global出现IPv6与IPv4，as/hk/eu IPv4同组一致；as连接美国 SJC/LAX且DNS新加坡，hk连日本NRT但DNS仍新加坡，eu连NRT但DNS美国。网关选择影响路径，不能保证sessTime或解决全部DNS。证据 `.verification/gateway-comparison.json`，凭据不入仓库。
+- TH2 使用as网关的真实随机Chromium实测Who A（该次），时区/语言/DNS/分流/WebRTC及延迟项通过，只有稳定指纹可追踪项提示；浏览器66ms与Cloudflare146ms是站点原始测量，没有伪造。后续与普通请求可分配不同IP，不以单次A保证安全。证据 `.verification/gateway-as-th2-browser/`。
+- 这不是修改网页成绩或全新UDP代理实现；同一环境保持固定身份仍可能被识别。软件关闭期间无后台定时删除服务，三天过期在下一次启动清理。
+
 # 内核并行、Python 组件与手动首页验收（尚未发行）
 
 日期 2026-11-03，Windows ARM64 本机；软件源码仍为 0.1.13，当前发行安装包不包含本节修复。源码与验证记录同步 GitHub，不创建新发行标签。

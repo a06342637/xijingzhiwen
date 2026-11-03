@@ -1,7 +1,7 @@
 import type {ProxyConfig} from '../shared/model';
 import {proxyUrl} from '../shared/config';
 
-type Geo={exitIp?:string|null;timezone?:string|null;locale?:string|null};
+type Geo={exitIp?:string|null;timezone?:string|null;locale?:string|null;country?:string|null;region?:string;city?:string;isp?:string};
 type Lookup=(proxy:{server:string;username?:string;password?:string})=>Promise<Geo>;
 export async function checkProxyRoute(proxy:ProxyConfig,lookup?:Lookup){
  const route={server:proxyUrl(proxy),username:proxy.username||undefined,password:proxy.password||undefined};
@@ -11,7 +11,7 @@ export async function checkProxyRoute(proxy:ProxyConfig,lookup?:Lookup){
   // Pass credentials only to the transport. Never return them to the UI/report.
   const geo=await resolve(route);
   if(!geo.exitIp||!geo.timezone)throw new Error('代理出口缺少 IP 或时区，无法完成出口检查');
-  samples.push({exitIp:geo.exitIp,timezone:geo.timezone,locale:geo.locale??null});
+  samples.push({exitIp:geo.exitIp,timezone:geo.timezone,locale:geo.locale??null,...(geo.country?{country:geo.country}:{}),...(geo.region?{region:geo.region}:{}),...(geo.city?{city:geo.city}:{}),...(geo.isp?{isp:geo.isp}:{})});
  }
  const routeStable=new Set(samples.map(s=>s.exitIp)).size===1;
  const timezoneStable=new Set(samples.map(s=>s.timezone)).size===1;

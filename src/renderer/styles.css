@@ -18,3 +18,5 @@
 .dashboard-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;margin-left:18px;font-size:13px;color:#335d51}.dashboard-preference input{accent-color:#26725b}
 
 .diagnostic-links-preference{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;margin-left:18px;font-size:13px}.diagnostic-links-preference input{accent-color:#26725b}
+
+.select-all{display:flex;align-items:center;gap:6px;padding:8px;font-size:12px;white-space:nowrap}.environment-network{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.environment-network small{flex-basis:100%;font-size:11px;color:var(--muted)}.network-actions{display:inline-flex}.proxy-test-strip{display:flex;gap:12px;align-items:center;padding:12px 0;margin-bottom:12px}.proxy-test-strip span{font-size:12px;line-height:1.7;color:var(--muted)}.recycle-entry{color:var(--green)}

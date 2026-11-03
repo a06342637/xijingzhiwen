@@ -46,6 +46,7 @@ export async function runSmoke({store,kernels,browsers,components,window,state,h
  }
  if(process.env.QIJING_SMOKE_FEATURES==='1'){const {featureSmoke}=await import('./features-smoke');checks.push(...await featureSmoke(window,output));}
  if(process.env.QIJING_SMOKE_MAINTENANCE_UI==='1'){if(!handlers)throw new Error('Missing smoke handlers');const {maintenanceUiSmoke}=await import('./maintenance-ui-smoke');checks.push(...await maintenanceUiSmoke(window,store,output,handlers));}
+ if(process.env.QIJING_SMOKE_ENVIRONMENT_UI==='1'){if(!handlers)throw new Error('Missing smoke handlers');const {environmentUiSmoke}=await import('./environment-ui-smoke');checks.push(...await environmentUiSmoke(window,store,output,handlers));}
  if(process.env.QIJING_SMOKE_DEVICES==='1'){const {verifyDevices}=await import('./device-verification');checks.push(...await verifyDevices(store,kernels,browsers,output));}
  if(process.env.QIJING_SMOKE_FIREFOX_APPEARANCE==='1'){const {verifyFirefoxAppearance}=await import('./firefox-appearance-verification');checks.push(await verifyFirefoxAppearance(store,output));}
  if(process.env.QIJING_SMOKE_DEVICE_UI==='1'){const {verifyDeviceUI}=await import('./device-ui-verification');checks.push(...await verifyDeviceUI(window,store));}

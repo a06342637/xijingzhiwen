@@ -174,7 +174,7 @@ export async function maybeResolveGeoip(geoip, proxy, timezone, locale, args) {
   }
   const geo = await geoipHttp(extractProxyUrl(proxy));
   if (!geo) throw new Error("GeoIP lookup failed; no direct fallback");
-  return { timezone: timezone ?? geo.timezone, locale: locale ?? geo.locale, exitIp: geo.exitIp };
+  return { timezone: timezone ?? geo.timezone, locale: locale ?? geo.locale, exitIp: geo.exitIp, country:geo.country, region:geo.region, city:geo.city, isp:geo.isp };
 }
 
 // ---------------------------------------------------------------------------
