@@ -74,7 +74,7 @@ export const FEATURES:Feature[]=[
  feature('windowWidth','窗口宽度','硬件 / 屏幕','number',1280,undefined,'真实浏览器窗口初始尺寸。',{min:320,max:16384}),
  feature('windowHeight','窗口高度','硬件 / 屏幕','number',860,undefined,'真实浏览器窗口初始尺寸。',{min:240,max:16384}),
  feature('maximized','启动时最大化','硬件 / 屏幕','toggle',false,undefined,'开启时以最大化窗口启动。'),
- feature('viewportMode','页面视口','硬件 / 屏幕','select','native',undefined,'原生视口随窗口；固定视口用于布局检查。',{options:['native','fixed']}),
+ feature('viewportMode','页面视口','硬件 / 屏幕','select','native',undefined,'原生视口随窗口；固定视口用于普通网页布局检查，扩展工具页面保持自身尺寸。',{options:['native','fixed']}),
  feature('viewportWidth','固定视口宽度','硬件 / 屏幕','number',1280,undefined,'仅固定视口模式生效。',{min:1,max:16384}),
  feature('viewportHeight','固定视口高度','硬件 / 屏幕','number',720,undefined,'仅固定视口模式生效。',{min:1,max:16384}),
  feature('touch','最大触摸点','输入 / 显示偏好','number',0,'fingerprint-max-touch-points','不生成实体触摸屏。',{min:0,max:16}),

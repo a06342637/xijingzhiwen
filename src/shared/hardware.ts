@@ -1,3 +1,4 @@
+import {normalizePersona} from './browser-persona';
 import type {Values} from './model';
 export type HardwareOS='windows'|'macos'|'linux';
 type Tier='office'|'mainstream'|'high'|'workstation';
@@ -73,7 +74,7 @@ export function selectHardware(v:Values,change:{cpu?:string;gpu?:string;ram?:num
  return applyHardware(v,{id:'custom',cpu:cpuId,gpu:gpuId,ram});
 }
 export function editFingerprint(v:Values,key:string,value:string|number|boolean):Values{
- const next={...v,[key]:value};
+ const next=normalizePersona({...v,[key]:value});
  if(key==='platform'&&value!==v.platform&&(v.cpuModel||v.gpuModel))return {...next,cpuModel:'',gpuModel:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:''};
  if(key==='cpu'&&value!==v.cpu)next.cpuModel='';
  if(['gpuVendor','gpuRenderer','gpuBackend'].includes(key)&&value!==v[key])next.gpuModel='';

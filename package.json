@@ -1,6 +1,6 @@
 {
   "name": "qijing",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "private": true,
   "description": "栖境 · Windows 多环境浏览器管理软件",
   "author": "Qijing contributors",
@@ -20,7 +20,6 @@
   "dependencies": {
     "@xiaoxiaofeihh/chromix": "file:vendor/chromix-node",
     "electron-updater": "^6.8.11",
-    "entities": "^9.0.0",
     "lucide-react": "^0.577.0",
     "playwright-core": "1.64.1",
     "playwright-firefox-driver": "npm:playwright-core@1.62.0",

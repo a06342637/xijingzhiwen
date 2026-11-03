@@ -1,15 +1,15 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash,randomBytes} from 'node:crypto';
-import type {Profile,ProxyConfig} from '../shared/model';
+import type {Profile} from '../shared/model';
 import sites from '../../resources/bookmark-sites.json';
-import {resolveBookmarkTitles} from './bookmark-titles';
+import catalog from '../../resources/bookmark-titles.json';
 export const BOOKMARK_COUNT=60;
 export function generatedBookmarks(profile:Pick<Profile,'id'|'seed'>){
  let state=createHash('sha256').update(profile.id+':'+profile.seed+':bookmarks-v1').digest().readUInt32LE(0)||1;
  const random=()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return (state>>>0)/4294967296;};
  const pool=[...sites];for(let i=0;i<BOOKMARK_COUNT;i++){const j=i+Math.floor(random()*(pool.length-i));[pool[i],pool[j]]=[pool[j],pool[i]];}
- return pool.slice(0,BOOKMARK_COUNT).map(domain=>({name:domain,url:'https://'+domain+'/'}));
+ return pool.slice(0,BOOKMARK_COUNT).map(domain=>({name:(catalog.sites as Record<string,string>)[domain]||domain,url:'https://'+domain+'/'}));
 }
 export const bookmarkFolder=(profile:Pick<Profile,'id'>)=>'栖境随机书签 · '+profile.id;
 export const bookmarkGuids=(profile:Pick<Profile,'id'>)=>Array.from({length:BOOKMARK_COUNT},(_,i)=>createHash('sha256').update(profile.id+':flat-v2:'+i).digest('base64url').slice(0,12));
@@ -18,9 +18,9 @@ const signature=(p:Profile,enabled:boolean,entries:unknown)=>createHash('sha256'
 // Source: https://github.com/mozilla/gecko-dev ; https://mozilla.org/MPL/2.0/
 export function placesUrlHash(url:string){const hash=(s:string)=>{let h=0;for(const c of Buffer.from(s).subarray(0,1500))h=Math.imul(((h<<5)|(h>>>27))^c,0x9e3779b9)>>>0;return h;};return (hash(url.split(':')[0])&0xffff)*4294967296+hash(url);}
 async function writeAtomic(file:string,value:string){await fs.mkdir(path.dirname(file),{recursive:true});const tmp=file+'.qijing-tmp';await fs.writeFile(tmp,value,{mode:0o600});await fs.rename(tmp,file);}
-export async function prepareBookmarks(profile:Profile,profileDir:string,enabled:boolean,binary?:string,proxy?:ProxyConfig,lookupTitles=false):Promise<Record<string,string|boolean>>{
+export async function prepareBookmarks(profile:Profile,profileDir:string,enabled:boolean,binary?:string):Promise<Record<string,string|boolean>>{
  enabled=enabled&&profile.mode==='custom';const marker=path.join(profileDir,'qijing-bookmarks.json');let previous:any;try{previous=JSON.parse(await fs.readFile(marker,'utf8'));}catch{}
- let entries=enabled?generatedBookmarks(profile):[];if(lookupTitles&&enabled)entries=await resolveBookmarkTitles(entries,profileDir,proxy);
+ const entries=enabled?generatedBookmarks(profile):[];
  const hash=signature(profile,enabled,entries);if(previous?.signature===hash&&profile.values.engine!=='firefox')return {};
  const folder=bookmarkFolder(profile);
  if(profile.values.engine==='firefox'){

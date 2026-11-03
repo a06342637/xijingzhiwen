@@ -1,4 +1,5 @@
 import {defaultValues,type Values} from './model';
+import {normalizePersona} from './browser-persona';
 export type Engine='chromium'|'firefox';
 export const FIREFOX_VERSION='158.0.1-beta.41';
 export const ENGINE_NAMES={chromium:'Chromix / Chromium',firefox:'Firefox / Camoufox（测试版）'};
@@ -44,7 +45,7 @@ export function mobileIdentity(v:Values,version:string){
  return {userAgent:mobileUA(v,version),platform:android?'Linux armv8l':v.deviceType==='ipad'?'iPad':'iPhone',userAgentMetadata:{brands:android?[{brand:'Chromium',version:version.split('.')[0]}]:[],fullVersionList:android?[{brand:'Chromium',version}]:[],platform:android?'Android':'iOS',platformVersion:android?'14.0.0':'18.0.0',architecture:'',model:android?String(v.deviceModel||'Pixel 8'):'',mobile:v.deviceType==='iphone'||Math.min(Number(v.screenWidth),Number(v.screenHeight))<600,bitness:'',wow64:false},metrics:{width:Number(v.viewportWidth),height:Number(v.viewportHeight),screenWidth:Number(v.screenWidth),screenHeight:Number(v.screenHeight),deviceScaleFactor:Number(v.deviceScale),mobile:true,screenOrientation:{type:landscape?'landscapePrimary':'portraitPrimary',angle:landscape?90:0}}};
 }
 export function applyDesktop(v:Values,platform:string):Values{
- return {...v,deviceType:'desktop',deviceModel:'',platform,platformVersion:'',userAgent:'',cpuModel:'',gpuModel:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:'',deviceScale:'1',viewportMode:'native',touch:0,pointer:'fine',hover:'hover',screenWidth:1920,screenHeight:1080,taskbarHeight:48,windowWidth:1280,windowHeight:860,viewportWidth:1280,viewportHeight:720};
+ return normalizePersona({...v,deviceType:'desktop',deviceModel:'',platform,platformVersion:'',userAgent:'',cpuModel:'',gpuModel:'',gpuBackend:'native',gpuVendor:'',gpuRenderer:'',deviceScale:'1',viewportMode:'native',touch:0,pointer:'fine',hover:'hover',screenWidth:1920,screenHeight:1080,taskbarHeight:platform==='macos'?25:platform==='linux'?40:48,windowWidth:1280,windowHeight:860,viewportWidth:1280,viewportHeight:720});
 }
 export function devicePreset(v:Values){
  return DEVICES.find(d=>d.type===v.deviceType&&Number(v.deviceScale)===d.dpr&&((d.width===v.screenWidth&&d.height===v.screenHeight)||(d.width===v.screenHeight&&d.height===v.screenWidth)))?.id||'';

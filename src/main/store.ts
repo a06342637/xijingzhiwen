@@ -1,3 +1,4 @@
+import {normalizePersona} from '../shared/browser-persona';
 import initSqlJs, {type Database} from 'sql.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +26,7 @@ export class Store {
  get<T>(kind:string,id:string):T {const st=this.db.prepare('SELECT data FROM objects WHERE kind=? AND id=?');st.bind([kind,id]);const found=st.step()?JSON.parse(st.getAsObject().data as string):null;st.free();if(!found)throw new Error('记录不存在或已删除');return found;}
  put<T>(kind:string,id:string,value:T){return this.mutate(()=>{this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data',[kind,id,JSON.stringify(value)]);return value;});}
  remove(kind:string,id:string){if(kind==='proxy'&&this.proxyWrites.has(id))throw new Error('代理正在保存，请完成后删除');this.mutate(()=>{this.db.run('DELETE FROM objects WHERE kind=? AND id=?',[kind,id]);if(kind==='proxy')this.db.run('DELETE FROM secrets WHERE id=?',[id]);});}
- profiles():Profile[]{return this.all<Profile>('profile').map(p=>({...p,values:{...defaultValues(),randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values}}));} kernels(){return this.all<Kernel>('kernel');} extensions(){return this.all<Extension>('extension');} reports(){return this.all<Report>('report').slice(0,100);}
+ profiles():Profile[]{return this.all<Profile>('profile').map(p=>({...p,values:normalizePersona({...defaultValues(),randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values})}));} kernels(){return this.all<Kernel>('kernel');} extensions(){return this.all<Extension>('extension');} reports(){return this.all<Report>('report').slice(0,100);}
  createProfiles(profiles:Profile[]){return this.mutate(()=>{for(const p of profiles)this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?)',['profile',p.id,JSON.stringify(p)]);return profiles;});}
  recordProfileStart(id:string,at=new Date().toISOString()){const profile=this.get<Profile>('profile',id);return this.put('profile',id,{...profile,lastStartedAt:at});}
  saveProxy(raw:ProxyConfig){

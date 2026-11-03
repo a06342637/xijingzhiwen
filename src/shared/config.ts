@@ -3,8 +3,9 @@ import path from 'node:path';
 import { FEATURES, profileSchema, type Profile, type ProxyConfig } from './model';
 import {fieldSupported} from './devices';
 import {CPUS,GPUS,hardwareCompatible} from './hardware';
+import {normalizePersona} from './browser-persona';
 export function validateProfile(raw:unknown):Profile {
- const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',deviceModel:'',cpuModel:'',gpuModel:'',hardwareRam:16,hardwareRandom:true,randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values};const v=p.values;
+ const p=profileSchema.parse(raw);p.values={engine:'chromium',deviceType:'desktop',deviceScale:'1',deviceModel:'',cpuModel:'',gpuModel:'',hardwareRam:16,hardwareRandom:true,randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values};if(p.values.engine==='chromium'&&p.values.deviceType==='desktop'&&p.values.platform!=='windows'&&p.values.brand!=='Firefox')p.values=normalizePersona(p.values);const v=p.values;
  for(const [key,items] of [['cpuModel',CPUS],['gpuModel',GPUS]] as const)if(v[key]&&!items.some(x=>x.id===v[key]&&x.systems.includes(v.platform as any)))throw new Error('硬件型号不存在或不支持当前系统：'+key);
  if(v.cpuModel&&v.gpuModel&&!hardwareCompatible({id:'custom',cpu:String(v.cpuModel),gpu:String(v.gpuModel),ram:Number(v.hardwareRam)},String(v.platform)))throw new Error('CPU 与 GPU 组合不兼容当前系统或集成显卡平台');
  if(v.deviceModel&&(!/^[a-zA-Z0-9 ._+-]{1,80}$/.test(String(v.deviceModel))||v.deviceType!=='android'))throw new Error('型号仅用于安卓，支持最多 80 个英文、数字、空格和 ._+- 字符');
@@ -67,8 +68,8 @@ export function buildOptions(p:Profile,binary:string,profileDir:string,extension
  if(extensions.length){if(extensions.some(p=>p.includes(',')))throw new Error('扩展目录不能包含逗号');args.push('--load-extension='+extensions.join(','),'--disable-extensions-except='+extensions.join(','));}
  // Null disables Playwright's default light/no-preference media emulation,
  // allowing the kernel's configured preferences (and native defaults) to apply.
- const options:any={userDataDir:profileDir,headless:false,stealthArgs:false,args,geoip:Boolean(v.geoip),viewport:v.viewportMode==='fixed'?{width:v.viewportWidth,height:v.viewportHeight}:null,launchOptions:{executablePath:binary,chromiumSandbox:true,timeout:60000,downloadsPath:p.downloadDir||undefined,ignoreDefaultArgs:extensions.length?['--enable-automation','--disable-extensions']:['--enable-automation']},contextOptions:{acceptDownloads:true,colorScheme:null,reducedMotion:null,forcedColors:null,contrast:null}};
- if(v.viewportMode==='fixed')Object.assign(options.contextOptions,{screen:{width:Number(v.screenWidth),height:Number(v.screenHeight)},deviceScaleFactor:Number(v.deviceScale)});
+ const options:any={userDataDir:profileDir,headless:false,stealthArgs:false,args,geoip:Boolean(v.geoip),viewport:v.viewportMode==='fixed'&&!extensions.length?{width:v.viewportWidth,height:v.viewportHeight}:null,launchOptions:{executablePath:binary,chromiumSandbox:true,timeout:60000,downloadsPath:p.downloadDir||undefined,ignoreDefaultArgs:extensions.length?['--enable-automation','--disable-extensions']:['--enable-automation']},contextOptions:{acceptDownloads:true,colorScheme:null,reducedMotion:null,forcedColors:null,contrast:null}};
+ if(v.viewportMode==='fixed'&&!extensions.length)Object.assign(options.contextOptions,{screen:{width:Number(v.screenWidth),height:Number(v.screenHeight)},deviceScaleFactor:Number(v.deviceScale)});
  if(v.deviceType&&v.deviceType!=='desktop'){
   options.args=args.filter(a=>!a.startsWith('--fingerprint-')&&!a.startsWith('--fingerprint='));options.args.unshift('--fingerprint=off');
   Object.assign(options.contextOptions,{isMobile:true,hasTouch:true});

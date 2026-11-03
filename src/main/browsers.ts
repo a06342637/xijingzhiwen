@@ -9,6 +9,7 @@ import {CAPABILITIES,type Profile,type Kernel,type Report,type Check,type Extens
 import {CPUS,GPUS} from '../shared/hardware';
 import {prepareBookmarks} from './bookmarks';
 import {prepareSearchDefaults} from './search-defaults';
+import {prepareExtensionPopup} from './extension-popup';
 import {validateProfile} from '../shared/config';
 import {fieldSupported} from '../shared/devices';
 import {fingerprintLocks} from '../shared/fingerprint-presets';
@@ -41,7 +42,7 @@ export class Browsers {
  private async startInner(id:string,blank=false){
   const p=validateProfile(this.store.get<Profile>('profile',id));if(p.archived)throw new Error('请先取消归档');const kernel=await this.kernels.verify(p.kernelId);if((kernel.engine||'chromium')!==p.values.engine)throw new Error('环境与内核引擎不匹配，请选择对应内核');const profileDir=inside(this.store.root,'profiles',p.id);
   const release=await acquireProfileLock(profileDir);let r:Runner|undefined;
-  try{let python;if(p.mode==='measured')python=await this.python();const extensions=p.extensionIds.map(x=>this.store.get<Extension>('extension',x).path);for(const folder of extensions)await fs.access(path.join(folder,'manifest.json'));const proxy=p.proxyId?await this.store.proxy(p.proxyId):undefined;const bookmarkPrefs=p.mode==='measured'?{}:await prepareBookmarks(p,profileDir,this.store.settings().randomBookmarks!==false,kernel.path,proxy,!process.env.QIJING_SMOKE||process.env.QIJING_SMOKE_BOOKMARK_NETWORK==='1');Object.assign(bookmarkPrefs,await prepareSearchDefaults(p,kernel.path));r=this.create(id,kernel.id,p,release);await this.rpc(r,'start',{profile:p,kernel,profileDir,extensions,proxy,downloadDir:inside(this.store.root,'downloads',id),python,blank,bookmarkPrefs,randomBookmarks:this.store.settings().randomBookmarks!==false,fingerprintLocks:fingerprintLocks(this.store.settings()),startupDashboard:this.store.settings().startupDashboard!==false,diagnosticLinks:this.store.settings().diagnosticLinks!==false},180000);return true;}catch(error){if(r)await this.terminate(id,r);else await release();throw error;}
+  try{let python;if(p.mode==='measured')python=await this.python();const extensions=p.extensionIds.map(x=>this.store.get<Extension>('extension',x).path);for(const folder of extensions){await fs.access(path.join(folder,'manifest.json'));await prepareExtensionPopup(folder);}const proxy=p.proxyId?await this.store.proxy(p.proxyId):undefined;const bookmarkPrefs=p.mode==='measured'?{}:await prepareBookmarks(p,profileDir,this.store.settings().randomBookmarks!==false,kernel.path);Object.assign(bookmarkPrefs,await prepareSearchDefaults(p,kernel.path));r=this.create(id,kernel.id,p,release);await this.rpc(r,'start',{profile:p,kernel,profileDir,extensions,proxy,downloadDir:inside(this.store.root,'downloads',id),python,blank,bookmarkPrefs,randomBookmarks:this.store.settings().randomBookmarks!==false,fingerprintLocks:fingerprintLocks(this.store.settings()),startupDashboard:this.store.settings().startupDashboard!==false,diagnosticLinks:this.store.settings().diagnosticLinks!==false},180000);return true;}catch(error){if(r)await this.terminate(id,r);else await release();throw error;}
  }
  private async terminate(id:string,r:Runner){
   const exited=new Promise<void>(resolve=>{if(r.child.exitCode!==null||r.child.signalCode!==null)resolve();else r.child.once('exit',()=>resolve());});
