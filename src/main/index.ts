@@ -65,7 +65,7 @@ const handlers:Record<string,(p:any)=>Promise<any>>={
  'profile.delete':async p=>{const id=stringId(p);assertIdle(id);await store.deleteProfilePermanently(id);return {deleted:true};},
  'profile.deleteBatch':async p=>{const ids=[...new Set(z.array(idSchema).min(1).max(1000).parse(p.ids))];const results=[];for(const id of ids){try{assertIdle(id);await store.deleteProfilePermanently(id);results.push({id,ok:true});}catch(e){results.push({id,ok:false,error:e instanceof Error?e.message:String(e)});}}return results;},
  'localApi.manage':async p=>localApi.manage(p),
- 'recycle.empty':async()=>{if(!store.recycled().length)return [];if(!await confirm('清空回收站所有指纹配置？','回收站中的全部环境配置、浏览器数据和软件管理的下载将永久删除，无法恢复。'))return {canceled:true};return store.purgeAllRecycled();},
+ 'recycle.empty':async()=>{if(!store.recycled().length)return [];return store.purgeAllRecycled();},
  'recycle.restore':async p=>store.restoreEnvironment(stringId(p)),
  'recycle.purge':async p=>store.purgeEnvironment(stringId(p)),
  'profile.start':async p=>browsers.start(stringId(p)),
