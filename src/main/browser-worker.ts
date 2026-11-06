@@ -31,7 +31,7 @@ async function start(payload:any){
  const lib=await sdk();
  if(profile.values.engine==='firefox')context=await launchFirefox(profile,kernel.path,payload.profileDir,kernel.version,payload.proxy,payload.bookmarkPrefs,payload.controlledFeatures);
  else if(profile.mode==='measured'){context=await lib.launchPersistentContext({userDataDir:payload.profileDir,headless:false,devicePool:{python:payload.python,host:profile.recordPath,records:[profile.recordPath],seed:profile.seed}} as any);}
-  else {const options=buildOptions(profile,kernel.path,payload.profileDir,payload.extensions,payload.proxy,payload.controlledFeatures);context=await lib.launchPersistentContext(options);
+  else {const options=buildOptions(profile,kernel.path,payload.profileDir,payload.extensions,payload.proxy,payload.controlledFeatures);if(payload.automation){await fs.rm(path.join(payload.profileDir,'DevToolsActivePort'),{force:true});options.args.push('--remote-debugging-port=0','--remote-debugging-address=127.0.0.1');}context=await lib.launchPersistentContext(options);
   if(payload.extensions.length&&profile.values.deviceType==='desktop'){
    const configure=async(page:any)=>{const session=await context.newCDPSession(page);const apply=async()=>{if(page.isClosed())return;if(page.url().startsWith('chrome-extension:')){await session.send('Emulation.clearDeviceMetricsOverride');const tool=await session.send('Browser.getWindowForTarget');const main=context.pages().find((p:any)=>!p.url().startsWith('chrome-extension:'));if(main){const other=await context.newCDPSession(main);try{const primary=await other.send('Browser.getWindowForTarget');if(tool.windowId!==primary.windowId)await session.send('Browser.setWindowBounds',{windowId:tool.windowId,bounds:{width:580,height:680}});}finally{await other.detach();}}}else if(profile.values.viewportMode==='fixed')await session.send('Emulation.setDeviceMetricsOverride',{width:Number(profile.values.viewportWidth),height:Number(profile.values.viewportHeight),deviceScaleFactor:Number(profile.values.deviceScale),screenWidth:Number(profile.values.screenWidth),screenHeight:Number(profile.values.screenHeight),mobile:false});};await apply();page.on('framenavigated',(frame:any)=>{if(frame===page.mainFrame())void apply().catch(()=>{});});page.once('close',()=>void session.detach().catch(()=>{}));};
    const ready=(page:any)=>{const task=configure(page);pageReady.set(page,task);task.catch(e=>send({event:'notice',error:safeError(e)}));return task;};for(const page of context.pages())await ready(page);context.on('page',ready);
@@ -57,6 +57,23 @@ async function request(action:string,payload:any){
   const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker');await worker.evaluate(async()=>{await (globalThis as any).qijingOpenPopupWindow();});const page=context.pages().find((p:any)=>p.url().startsWith('chrome-extension:'))||await context.waitForEvent('page');await page.waitForLoadState('load');await pageReady.get(page);await page.waitForTimeout(300);const session=await context.newCDPSession(page);await session.detach();await page.waitForTimeout(200);await page.screenshot({path:payload.screenshot});return page.evaluate(()=>({width:innerWidth,height:innerHeight,title:document.title,text:document.body.innerText.slice(0,500)}));
  }
  if(action==='start'){await start(payload);return true;}
+ if(action==='automationInfo'){
+  let endpoint='',port='';if(initial.automation&&profile.values.engine==='chromium'&&profile.mode==='custom'){
+   const active=(await fs.readFile(path.join(initial.profileDir,'DevToolsActivePort'),'utf8')).trim().split(/\r?\n/);port=active[0];if(!/^\d+$/.test(port)||!active[1]?.startsWith('/devtools/browser/'))throw new Error('自动化调试地址无效');endpoint=`ws://127.0.0.1:${port}${active[1]}`;
+  }
+  return {ws:{puppeteer:endpoint},debug_port:port,engine:profile.values.engine,automation:profile.values.engine==='firefox'?'tabs':'cdp-or-tabs'};
+ }
+ if(action==='automation'){
+  if(!context)throw new Error('环境未运行');const pages=context.pages();
+  if(payload.action==='list')return {list:await Promise.all(pages.map(async(page:any,tab:number)=>({tab,url:page.url(),title:await page.title(),dashboard:dashboard?.page===page})))};
+  const page=payload.action==='open'?await context.newPage():pages[payload.tab??0];if(!page)throw new Error('标签页不存在');await pageReady.get(page);
+  if(payload.action==='open'||payload.action==='goto')await page.goto(payload.url||'about:blank',{waitUntil:'domcontentloaded',timeout:30000});
+  else if(payload.action==='close'){await page.close();return {closed:true};}
+  else if(payload.action==='content')return {url:page.url(),title:await page.title(),html:await page.content()};
+  else if(payload.action==='click'){if(!payload.selector)throw new Error('缺少 selector');await page.locator(payload.selector).click({timeout:15000});}
+  else if(payload.action==='fill'){if(!payload.selector||typeof payload.text!=='string')throw new Error('缺少 selector 或 text');await page.locator(payload.selector).fill(payload.text,{timeout:15000});}
+  return {url:page.url(),title:await page.title()};
+ }
  if(action==='stop'){await context?.close();setTimeout(()=>process.exit(0),500).unref();return true;}
  if(action==='focus'){const page=context?.pages()[0];if(page)await page.bringToFront();return true;}
  if(action==='diagnose')return diagnostic();

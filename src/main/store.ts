@@ -8,6 +8,7 @@ import { createRequire } from 'node:module';
 import type {Profile,ProxyConfig,Kernel,Extension,Report,AppState,RecycledEnvironment,ProxyObservation} from '../shared/model';
 import {defaultValues,proxySchema} from '../shared/model';
 import {proxyUrl} from '../shared/config';
+import {parseProxyInput} from '../shared/proxy-input';
 import {renameWithRetry} from './replace-directory';
 const moduleRequire=createRequire(typeof __filename==='string'?__filename:path.join(process.cwd(),'package.json'));
 export function inside(root:string,...parts:string[]){const target=path.resolve(root,...parts);const relative=path.relative(path.resolve(root),target);if(relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative))throw new Error('路径超出工作空间');return target;}
@@ -26,28 +27,33 @@ export class Store {
  all<T>(kind:string):T[]{const st=this.db.prepare('SELECT data FROM objects WHERE kind=? ORDER BY rowid DESC');st.bind([kind]);const result:T[]=[];while(st.step())result.push(JSON.parse(st.getAsObject().data as string));st.free();return result;}
  get<T>(kind:string,id:string):T {const st=this.db.prepare('SELECT data FROM objects WHERE kind=? AND id=?');st.bind([kind,id]);const found=st.step()?JSON.parse(st.getAsObject().data as string):null;st.free();if(!found)throw new Error('记录不存在或已删除');return found;}
  put<T>(kind:string,id:string,value:T){return this.mutate(()=>{this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data',[kind,id,JSON.stringify(value)]);return value;});}
- remove(kind:string,id:string){if(kind==='proxy'&&this.proxyWrites.has(id))throw new Error('代理正在保存，请完成后删除');this.mutate(()=>{this.db.run('DELETE FROM objects WHERE kind=? AND id=?',[kind,id]);if(kind==='proxy')this.db.run('DELETE FROM secrets WHERE id=?',[id]);});}
+ remove(kind:string,id:string){if(kind==='proxy'&&this.proxyWrites.has(id))throw new Error('代理正在保存，请完成后删除');this.mutate(()=>{this.db.run('DELETE FROM objects WHERE kind=? AND id=?',[kind,id]);if(kind==='proxy'){this.db.run('DELETE FROM secrets WHERE id=?',[id]);this.db.run("DELETE FROM objects WHERE kind='proxyOriginal' AND id=?",[id]);}});}
  profiles():Profile[]{return this.all<Profile>('profile').map(p=>({...p,values:normalizePersona({...defaultValues(),randomStrategy:p.mode==='measured'||(p.values.deviceType&&p.values.deviceType!=='desktop')?'consistent':'catalog',...p.values})}));} kernels(){return this.all<Kernel>('kernel');} extensions(){return this.all<Extension>('extension');} reports(){return this.all<Report>('report').slice(0,100);}
  createProfiles(profiles:Profile[]){return this.mutate(()=>{for(const p of profiles)this.db.run('INSERT INTO objects(kind,id,data) VALUES(?,?,?)',['profile',p.id,JSON.stringify(p)]);return profiles;});}
  recordProfileStart(id:string,at=new Date().toISOString()){const profile=this.get<Profile>('profile',id);return this.put('profile',id,{...profile,lastStartedAt:at});}
  saveProxy(raw:ProxyConfig){
-  const p=proxySchema.parse(raw),previous=this.proxyWrites.get(p.id);
-  const task=(async()=>{if(previous)await previous.catch(()=>{});const {password,...clean}=p;let effective=password;
+   const p=proxySchema.parse(raw),previous=this.proxyWrites.get(p.id);
+  const task=(async()=>{if(previous)await previous.catch(()=>{});const {password,originalText,...clean}=p;let effective=password;
    if(effective===undefined&&this.proxies().some(x=>x.id===p.id))effective=(await this.proxy(p.id)).password;
-   proxyUrl({...p,password:effective});let encrypted:string|undefined;
+   proxyUrl({...p,password:effective});let encrypted:string|undefined,encryptedOriginal:string|undefined;
+   if(originalText!==undefined){const parsed=parseProxyInput(originalText);if(['protocol','host','port','username'].some(key=>(parsed as any)[key]!== (p as any)[key])||parsed.password!==(effective||''))throw new Error('代理原文与连接配置不一致');if(!await this.crypto.isEncryptionAvailable())throw new Error('Windows 加密不可用，无法保存代理原文');encryptedOriginal=(await this.crypto.encryptString(originalText)).toString('base64');}
    if(password){if(!await this.crypto.isEncryptionAvailable())throw new Error('Windows 加密不可用，无法保存代理密码');encrypted=(await this.crypto.encryptString(password)).toString('base64');}
-   return this.mutate(()=>{let previous:any;try{previous=this.get<ProxyConfig>('proxy',p.id);}catch{}if(!previous||['host','port','protocol','username','bypass'].some(k=>(previous as any)[k]!== (p as any)[k])||password!==undefined)this.db.run("DELETE FROM objects WHERE kind='proxyObservation' AND id=?",[p.id]);if(password!==undefined){if(encrypted)this.db.run('INSERT OR REPLACE INTO secrets(id,data) VALUES(?,?)',[p.id,encrypted]);else this.db.run('DELETE FROM secrets WHERE id=?',[p.id]);}const data={...clean,hasPassword:this.hasSecret(p.id)};this.db.run('INSERT OR REPLACE INTO objects(kind,id,data) VALUES(?,?,?)',['proxy',p.id,JSON.stringify(data)]);return data;});
+   return this.mutate(()=>{let previous:any;try{previous=this.get<ProxyConfig>('proxy',p.id);}catch{}if(!previous||['host','port','protocol','username','bypass'].some(k=>(previous as any)[k]!== (p as any)[k])||password!==undefined)this.db.run("DELETE FROM objects WHERE kind='proxyObservation' AND id=?",[p.id]);if(password!==undefined){if(encrypted)this.db.run('INSERT OR REPLACE INTO secrets(id,data) VALUES(?,?)',[p.id,encrypted]);else this.db.run('DELETE FROM secrets WHERE id=?',[p.id]);}if(encryptedOriginal)this.db.run("INSERT OR REPLACE INTO objects(kind,id,data) VALUES('proxyOriginal',?,?)",[p.id,JSON.stringify({encrypted:encryptedOriginal})]);else if(password!==undefined||!previous||['host','port','protocol','username'].some(key=>(previous as any)[key]!== (p as any)[key]))this.db.run("DELETE FROM objects WHERE kind='proxyOriginal' AND id=?",[p.id]);const data={...clean,hasPassword:this.hasSecret(p.id)};this.db.run('INSERT OR REPLACE INTO objects(kind,id,data) VALUES(?,?,?)',['proxy',p.id,JSON.stringify(data)]);return data;});
   })();this.proxyWrites.set(p.id,task);const clear=()=>{if(this.proxyWrites.get(p.id)===task)this.proxyWrites.delete(p.id);};void task.then(clear,clear);return task;
  }
  private hasSecret(id:string){const st=this.db.prepare('SELECT id FROM secrets WHERE id=?');st.bind([id]);const found=st.step();st.free();return found;}
  private removeUnusedProxy(id:string){
   if(!id||this.profiles().some(p=>p.proxyId===id)||this.recycled().some(r=>r.profile.proxyId===id))return;
   if(this.proxyWrites.has(id))throw new Error('关联代理正在保存，请完成后删除');
-  this.db.run("DELETE FROM objects WHERE kind IN ('proxy','proxyObservation') AND id=?",[id]);this.db.run('DELETE FROM secrets WHERE id=?',[id]);
+  this.db.run("DELETE FROM objects WHERE kind IN ('proxy','proxyObservation','proxyOriginal') AND id=?",[id]);this.db.run('DELETE FROM secrets WHERE id=?',[id]);
  }
  proxies(){return this.all<ProxyConfig>('proxy');}
+ async proxyForEdit(id:string){const p=await this.proxy(id);let record:{encrypted:string}|undefined;try{record=this.get('proxyOriginal',id);}catch{}if(record)p.originalText=await this.crypto.decryptString(Buffer.from(record.encrypted,'base64'));return p;}
  proxyObservations(){return this.all<ProxyObservation>('proxyObservation').filter(o=>this.proxies().some(p=>p.id===o.proxyId));}
  recycled(){return this.all<RecycledEnvironment>('recycle');}
+ async purgeAllRecycled(){const results=[];for(const r of this.recycled()){try{await this.purgeEnvironment(r.id);results.push({id:r.id,ok:true});}catch(error){results.push({id:r.id,ok:false,error:error instanceof Error?error.message:String(error)});}}return results;}
+ async saveApiKey(key:string){if(!await this.crypto.isEncryptionAvailable())throw new Error('Windows 加密不可用，无法保存 API Key');const encrypted=(await this.crypto.encryptString(key)).toString('base64');this.put('localApiSecret','key',{encrypted});}
+ async apiKey(){let encrypted:string;try{encrypted=this.get<{encrypted:string}>('localApiSecret','key').encrypted;}catch{return '';}return this.crypto.decryptString(Buffer.from(encrypted,'base64'));}
  private recycleDir(id:string){if(!/^[0-9a-f-]{36}$/i.test(id))throw new Error('回收记录标识无效');return inside(this.root,'trash','environments',id);}
  async proxy(id:string){const p=this.get<ProxyConfig>('proxy',id);const st=this.db.prepare('SELECT data FROM secrets WHERE id=?');st.bind([id]);const encrypted=st.step()?st.getAsObject().data as string:undefined;st.free();if(encrypted)p.password=await this.crypto.decryptString(Buffer.from(encrypted,'base64'));return p;}
  settings():AppState['settings']{let saved:Partial<AppState['settings']>={};try{saved=this.get('settings','app');}catch{}return {view:'list',theme:'system',maxBrowsers:5,automaticUpdates:true,startupDashboard:true,diagnosticLinks:true,inheritEnabledExtensions:true,randomBookmarks:true,...saved,...(!saved.listDefaultV2?{view:'list' as const}:{}),listDefaultV2:true,proxyLocaleDefaultsV1:true,controlledFeatures:{...controlledDefaults(),...saved.controlledFeatures},fingerprintDefaults:{...defaultValues(),...saved.fingerprintDefaults,...(!saved.proxyLocaleDefaultsV1?{geoip:true}:{})}};}

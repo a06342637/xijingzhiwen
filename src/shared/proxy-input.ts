@@ -10,6 +10,8 @@ export const PROXY_FORMATS = [
 ] as const;
 export type ProxyFormat=typeof PROXY_FORMATS[number][0];
 type Parsed=Pick<ProxyConfig,'protocol'|'host'|'port'|'username'|'password'>;
+export function parseProxyLines(input:string){const lines=input.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(lines.length>1000)throw new Error('最多粘贴1000行代理');return lines.map((line,index)=>{try{return parseProxyInput(line);}catch{throw new Error('第'+(index+1)+'行代理无法识别，请使用完整 HTTP/HTTPS/SOCKS5 地址');}});}
+export function proxyForIndex<T>(proxies:readonly T[],index:number):T|undefined{return proxies[Math.min(index,proxies.length-1)];}
 function endpoint(text:string){const m=/^(\[[^\]]+\]|[^:\s/@?#]+):(\d+)$/.exec(text);if(!m)throw new Error('网关地址应为主机:端口（IPv6 使用方括号）');const port=Number(m[2]);if(port<1||port>65535)throw new Error('代理端口应为 1–65535');return {host:m[1].replace(/^\[|\]$/g,''),port};}
 function credentials(text:string){const i=text.indexOf(':');if(i<0)throw new Error('认证信息应为用户名:密码');return {username:text.slice(0,i),password:text.slice(i+1)};}
 export function parseProxyInput(input:string,format:ProxyFormat='auto',fallback:Parsed['protocol']='http'):Parsed {

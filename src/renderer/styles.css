@@ -21,7 +21,7 @@
 
 .select-all{display:flex;align-items:center;gap:6px;padding:8px;font-size:12px;white-space:nowrap}.environment-network{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.environment-network small{flex-basis:100%;font-size:11px;color:var(--muted)}.network-actions{display:inline-flex}.proxy-test-strip{display:flex;gap:12px;align-items:center;padding:12px 0;margin-bottom:12px}.proxy-test-strip span{font-size:12px;line-height:1.7;color:var(--muted)}.recycle-entry{color:var(--green)}
 
-.compact-proxy .field{gap:5px}.compact-proxy textarea{min-height:42px;resize:vertical}.compact-proxy .proxy-test-strip{padding:4px 0;margin:0;gap:10px}.inline-proxy{padding:10px 12px!important;margin:0!important}.modal{overflow-anchor:none}.batch-random-note{font-size:12px;white-space:nowrap;color:var(--muted)}
+.compact-proxy .field{gap:5px}.compact-proxy textarea{min-height:82px;resize:vertical}.compact-proxy .proxy-test-strip{padding:4px 0;margin:0;gap:10px}.inline-proxy{padding:10px 12px!important;margin:0!important}.modal{overflow-anchor:none}.batch-random-note{font-size:12px;white-space:nowrap;color:var(--muted)}
 
 .proxy-source-row{display:flex;align-items:center;gap:10px}.proxy-source-row>span{font-size:12px;white-space:nowrap}.proxy-source-row select{width:230px}.proxy-source-row small{font-size:11px;color:var(--muted)}.inline-proxy .field>small{margin:0}.inline-proxy{padding:9px 12px!important}.random-toolbar{margin-bottom:14px}.proxy-source-row+.inline-proxy{margin-top:-6px!important}
 
@@ -34,3 +34,4 @@
 .preset-lock{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green)}.preset-lock input{width:auto}.preset-locks{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:18px;font-size:12px;color:var(--muted)}
 
 .controlled-settings{margin-top:24px;padding-top:20px}.controlled-settings>.advanced-heading{padding:0 22px}.controlled-settings h3 .badge{margin-left:10px}.controlled-config{border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0}.controlled-config>summary{cursor:pointer;color:var(--green);margin-bottom:15px}.controlled-fields .advanced-grid{padding-top:12px}
+ .api-panel .api-key{width:100%;font-family:monospace;margin:12px 0}.api-panel input[type=number]{width:100px}.api-example{padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--panel);white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.7}

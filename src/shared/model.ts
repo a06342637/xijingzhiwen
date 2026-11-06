@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type {ControlledFeatures} from './controlled-features';
+import type {LocalApiState} from './local-api';
 
 export type Verification = 'verified' | 'limited' | 'unverified' | 'unsupported';
 export type Values = Record<string, string | number | boolean>;
@@ -16,7 +17,7 @@ export const profileSchema=z.object({
   createdAt:z.string(),updatedAt:z.string(),lastStartedAt:z.iso.datetime().optional()
 }).strict();
 export type Profile=z.infer<typeof profileSchema>;
-export const proxySchema=z.object({id:idSchema,name:z.string().trim().min(1).max(80),protocol:z.enum(['http','https','socks5']),host:z.string().trim().min(1).max(255),port:z.number().int().min(1).max(65535),username:z.string().max(512),password:z.string().max(4096).optional(),hasPassword:z.boolean().optional(),bypass:z.string().max(1024)}).strict();
+export const proxySchema=z.object({id:idSchema,name:z.string().trim().min(1).max(80),protocol:z.enum(['http','https','socks5']),host:z.string().trim().min(1).max(255),port:z.number().int().min(1).max(65535),username:z.string().max(512),password:z.string().max(4096).optional(),originalText:z.string().max(8192).optional(),hasPassword:z.boolean().optional(),bypass:z.string().max(1024)}).strict();
 export type ProxyConfig=z.infer<typeof proxySchema>;
 export interface ProxyObservation {proxyId:string;testedAt:string;exitIp:string;country?:string;region?:string;city?:string;isp?:string;timezone?:string;locale?:string;routeStable:boolean;message:string}
 export interface RecycledEnvironment {id:string;profile:Profile;deletedAt:string;expiresAt:string;state:'recoverable'|'purging';hasBrowserData:boolean;hasDownloads:boolean}
@@ -28,7 +29,7 @@ export interface Report {id:string;profileId:string;profileName:string;kernelId:
 export interface DownloadProgress {id:string;label:string;received:number;total:number;phase:string;error?:string}
 export interface SoftwareUpdate {phase:'idle'|'checking'|'available'|'current'|'downloading'|'downloaded'|'installing'|'error';version?:string;notes?:string;percent:number;message:string}
 export interface AppSettings {view:'cards'|'list';theme:'system'|'light'|'dark';maxBrowsers:number;fingerprintDefaults:Values;fingerprintLocks?:string[];controlledFeatures?:ControlledFeatures;automaticUpdates?:boolean;startupDashboard?:boolean;diagnosticLinks?:boolean;inheritEnabledExtensions?:boolean;randomBookmarks?:boolean;listDefaultV2?:boolean;proxyLocaleDefaultsV1?:boolean}
-export interface AppState {profiles:Profile[];proxies:ProxyConfig[];proxyObservations?:ProxyObservation[];recycle?:RecycledEnvironment[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate}
+export interface AppState {profiles:Profile[];proxies:ProxyConfig[];proxyObservations?:ProxyObservation[];recycle?:RecycledEnvironment[];extensions:Extension[];kernels:Kernel[];reports:Report[];running:Record<string,string>;downloads:DownloadProgress[];dataDir:string;arch:string;version:string;pythonReady:boolean;notice?:string;settings:AppSettings;features:Feature[];update:SoftwareUpdate;localApi?:LocalApiState}
 export type Reply<T=unknown>={ok:true;data:T}|{ok:false;error:string};
 export interface DesktopApi {invoke<T=unknown>(action:string,payload?:unknown):Promise<T>;onState(callback:(state:AppState)=>void):()=>void}
 declare global { interface Window { qijing:DesktopApi } }

@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {createReadStream} from 'node:fs';
 import {releaseDir as out,pkg} from './release-path.mjs';
 await fs.mkdir(out,{recursive:true});
-for(const doc of ['README.md','VERIFICATION.md','BUGFIXES.md','THIRD_PARTY_NOTICES.md'])await fs.copyFile(doc,path.join(out,doc));
+for(const doc of ['README.md','VERIFICATION.md','BUGFIXES.md','THIRD_PARTY_NOTICES.md','LOCAL_API.md'])await fs.copyFile(doc,path.join(out,doc));
 const notes=await fs.readFile('scripts/release-notes.md','utf8');
 const checksums=[];
 for(const arch of ['arm64','x64']){
