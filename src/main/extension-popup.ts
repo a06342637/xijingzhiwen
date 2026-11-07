@@ -3,7 +3,9 @@ import path from 'node:path';
 
 // Chromix's seeded display emulation can clip browser action bubbles. Keep
 // extension code/data intact and open the same popup document in a tool window.
-export async function prepareExtensionPopup(directory:string){
+const preparing=new Map<string,Promise<void>>();
+export function prepareExtensionPopup(directory:string){const key=path.resolve(directory);let task=preparing.get(key);if(!task){task=preparePopup(key).finally(()=>preparing.delete(key));preparing.set(key,task);}return task;}
+async function preparePopup(directory:string){
  const file=path.join(directory,'manifest.json'),marker=path.join(directory,'qijing-popup-adapter.json');
  const manifest=JSON.parse(await fs.readFile(file,'utf8'));if(await fs.stat(marker).catch(()=>null))return;
  const action=manifest.action||manifest.browser_action;const popup=action?.default_popup;

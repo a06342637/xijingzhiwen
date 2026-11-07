@@ -1,3 +1,4 @@
+param([switch]$Persistent)
 $ErrorActionPreference = 'Stop'
 Add-Type -TypeDefinition @'
 using System;
@@ -23,6 +24,7 @@ public class QijingWindows {
  [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
  [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr h,uint flags);
  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+ [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr h,int cmd);
  public static List<IntPtr> Windows(){var a=new List<IntPtr>();EnumWindows((h,p)=>{int cloaked;DwmGetWindowAttribute(h,14,out cloaked,4);if(IsWindowVisible(h)&&GetWindow(h,4)==IntPtr.Zero&&cloaked==0)a.Add(h);return true;},IntPtr.Zero);return a;}
  public static List<IntPtr> Monitors(){var a=new List<IntPtr>();EnumDisplayMonitors(IntPtr.Zero,IntPtr.Zero,(h,d,r,p)=>{a.Add(h);return true;},IntPtr.Zero);return a;}
 }
@@ -30,8 +32,9 @@ public class QijingWindows {
 [void][QijingWindows]::SetThreadDpiAwarenessContext([IntPtr](-4))
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
 [Console]::InputEncoding = New-Object System.Text.UTF8Encoding $false
-$request = [Console]::In.ReadToEnd() | ConvertFrom-Json
-$processes = @(Get-CimInstance Win32_Process)
+function Invoke-WindowRequest($request) {
+$binaries=@($request.targets | ForEach-Object {[IO.Path]::GetFileName($_.binary)} | Select-Object -Unique)
+$processes=if($binaries.Count){$filter=($binaries | ForEach-Object {"Name='"+$_.Replace("'","''")+"'"}) -join ' OR ';@(Get-CimInstance Win32_Process -Filter $filter)}else{@()}
 function TargetProcess($target) {
  $profile = [Regex]::Escape($target.profileDir)
  $pattern = if ($target.engine -eq 'firefox') { '(?:^|\s)(?:-profile|--profile)\s+"?' + $profile + '"?(?:\s|$)' } else { '(?:^|\s)--user-data-dir=(?:"' + $profile + '"|' + $profile + ')(?:\s|$)' }
@@ -53,8 +56,20 @@ if($request.action -eq 'inventory'){
 }elseif($request.action -eq 'apply'){
  $results=@(foreach($placement in $request.placements){$matched=$windows | Where-Object { $_.profileId -eq $placement.profileId -and $_.handle -eq $placement.handle -and $_.processId -eq $placement.processId } | Select-Object -First 1
  if(!$matched){[PSCustomObject]@{profileId=$placement.profileId;ok=$false;error='window_changed'};continue}
- $handle=[IntPtr]([long]$matched.handle);[void][QijingWindows]::ShowWindow($handle,9);$r=$placement.bounds
- $success=[QijingWindows]::SetWindowPos($handle,[IntPtr]::Zero,$r.x,$r.y,$r.width,$r.height,0x0040)
- [PSCustomObject]@{profileId=$placement.profileId;ok=$success;bounds=(WindowBounds $handle);error=$(if(!$success){'window_position_denied'}else{''})}
+ $handle=[IntPtr]([long]$matched.handle);if([QijingWindows]::IsIconic($handle)){[void][QijingWindows]::ShowWindowAsync($handle,9)}$r=$placement.bounds
+ $success=[QijingWindows]::SetWindowPos($handle,[IntPtr]::Zero,$r.x,$r.y,$r.width,$r.height,0x4014)
+ $actual=WindowBounds $handle
+ for($attempt=0;$success -and $attempt -lt 10 -and ([Math]::Abs($actual.x-$r.x) -gt 2 -or [Math]::Abs($actual.y-$r.y) -gt 2 -or [Math]::Abs($actual.width-$r.width) -gt 2 -or [Math]::Abs($actual.height-$r.height) -gt 2);$attempt++){Start-Sleep -Milliseconds 10;$actual=WindowBounds $handle}
+ [PSCustomObject]@{profileId=$placement.profileId;ok=$success;bounds=$actual;requested=$r;error=$(if(!$success){'window_position_denied'}else{''})}
  });@{results=$results} | ConvertTo-Json -Depth 7 -Compress
 }else{throw 'Unsupported window operation'}
+
+}
+if($Persistent){
+ while($null -ne ($line=[Console]::In.ReadLine())){
+  if(!$line.Trim()){continue}
+  $message=$null
+  try{$message=$line|ConvertFrom-Json;$data=Invoke-WindowRequest $message.request|ConvertFrom-Json;@{id=$message.id;data=$data}|ConvertTo-Json -Depth 10 -Compress}
+  catch{@{id=$message.id;error=$_.Exception.Message}|ConvertTo-Json -Depth 5 -Compress}
+ }
+}else{Invoke-WindowRequest ([Console]::In.ReadToEnd()|ConvertFrom-Json)}

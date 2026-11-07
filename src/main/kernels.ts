@@ -7,9 +7,11 @@ import {Store,inside} from './store';
 import {getJson,getText,checksumFromManifest,downloadVerified,extractZip,hashFile} from './download';
 import {BASE_VERSION,type Kernel,type DownloadProgress} from '../shared/model';
 import {FIREFOX_VERSION,type Engine} from '../shared/devices';
+import {VerifiedFiles} from './verified-file';
 const exec=promisify(execFile);
 export async function peArchitecture(file:string):Promise<'arm64'|'x64'>{const f=await fs.open(file,'r');try{const head=Buffer.alloc(64);await f.read(head,0,64,0);if(head.toString('ascii',0,2)!=='MZ')throw new Error('不是 Windows PE 可执行文件');const offset=head.readUInt32LE(60);const pe=Buffer.alloc(6);await f.read(pe,0,6,offset);if(pe.readUInt32LE(0)!==0x4550)throw new Error('PE 头无效');const machine=pe.readUInt16LE(4);if(machine===0xaa64)return 'arm64';if(machine===0x8664)return 'x64';throw new Error('只支持 Windows ARM64 / x64');}finally{await f.close();}}
 export class Kernels {
+ private verifiedFiles=new VerifiedFiles();
  private busy=new Set<string>();
  private inspections=new Set<string>();
  private queue?:Promise<any>;
@@ -55,6 +57,6 @@ export class Kernels {
   }catch(error){this.emit({id,label:'Chromix '+version,received:0,total:0,phase:'失败',error:String(error)});throw error;}finally{this.busy.delete(id);await fs.rm(staging,{recursive:true,force:true});}
  }
  async importLocal(file:string){const arch=await peArchitecture(file);const engine:Engine=path.basename(file).toLowerCase()==='camoufox.exe'?'firefox':'chromium';if(engine==='firefox')await fs.access(path.join(path.dirname(file),'properties.json'));let version:string|undefined;try{const {stdout}=await exec(file,['--version'],{windowsHide:true,timeout:15000,maxBuffer:16384});version=(engine==='firefox'?/\d+\.\d+(?:\.\d+)?/:/\d+\.\d+\.\d+\.\d+/).exec(stdout)?.[0];}catch{}if(!version){const type=engine==='firefox'?(await import('playwright-firefox-driver')).firefox:(await import('playwright-core')).chromium;const browser=await type.launch({executablePath:file,headless:true,timeout:30000});try{version=browser.version();}finally{await browser.close();}}if(!version)throw new Error('无法读取浏览器版本');const kernel:Kernel={id:randomUUID(),engine,version,arch,path:file,sha256:await hashFile(file),source:'local',status:'unverified',installedAt:new Date().toISOString()};return this.store.put('kernel',kernel.id,kernel);}
- async verify(id:string){const k=this.store.get<Kernel>('kernel',id);if(await hashFile(k.path)!==k.sha256)throw new Error('内核文件已改变，请重新导入并验证');return k;}
+ async verify(id:string){const k=this.store.get<Kernel>('kernel',id);await this.verifiedFiles.verify(k.path,k.sha256);return k;}
  async remove(id:string){if(this.inspections.has(id)||this.busy.has(id))throw new Error('内核正在下载、验证或采集，请稍后再删除');if(this.store.profiles().some(p=>p.kernelId===id)||this.store.recycled().some(p=>p.profile.kernelId===id))throw new Error('环境或回收站仍绑定此内核，请先更换或彻底删除环境');const k=this.store.get<Kernel>('kernel',id);if(k.source==='release'){const source=inside(this.store.root,'kernels',id),recycled=inside(this.store.root,'trash',`kernel-${id}-${randomUUID()}`);await fs.rename(source,recycled);try{this.store.remove('kernel',id);}catch(error){await fs.rename(recycled,source);throw error;}}else this.store.remove('kernel',id);}
 }

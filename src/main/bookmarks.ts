@@ -25,11 +25,23 @@ export async function prepareBookmarks(profile:Profile,profileDir:string,enabled
  const folder=bookmarkFolder(profile);
  if(profile.values.engine==='firefox'){
   const dbFile=path.join(profileDir,'places.sqlite');
+  if(!enabled&&previous?.bootstrap&&typeof previous.backupFile==='string'&&/^bookmarks-\d{4}-\d{2}-\d{2}\.json$/.test(previous.backupFile)&&!await fs.stat(dbFile).catch(()=>null)){
+   const file=path.join(profileDir,'bookmarkbackups',previous.backupFile);let tree:any;try{tree=JSON.parse(await fs.readFile(file,'utf8'));}catch{}
+   const children=tree?.children?.[0]?.children;
+   if(Array.isArray(children)&&children.length===previous.guids?.length&&children.every((b:any,i:number)=>b.guid===previous.guids[i]))await fs.rm(file,{force:true});
+   await writeAtomic(marker,JSON.stringify({signature:hash,folder,profileId:profile.id,enabled:false}));return {'browser.places.importBookmarksHTML':false};
+  }
   if(enabled&&!await fs.stat(dbFile).catch(()=>null)){
    if(!binary)throw new Error('首次创建火狐书签需要可用内核');
-   // Initialize the browser's own schema in an empty profile. No sites are visited.
-   const {firefox}=await import('playwright-firefox-driver');const env={...process.env};for(const key of Object.keys(env))if(/^CAMOU_(CONFIG|PREFS)_/.test(key))delete env[key];
-   const context=await firefox.launchPersistentContext(profileDir,{executablePath:binary,headless:true,timeout:60000,env,firefoxUserPrefs:{'browser.places.importBookmarksHTML':false,'browser.bookmarks.testing.skipDefaultBookmarksImport':true,'network.proxy.type':0,'network.dns.disablePrefetch':true,'network.predictor.enabled':false,'browser.newtabpage.enabled':false,'browser.startup.page':0,'browser.startup.homepage':'about:blank','network.offline':true}});await context.close();
+   // Let Gecko initialize Places and restore a native JSON backup in its single
+   // normal launch. Only seed a truly new profile; never replace user backups.
+   const backupDir=path.join(profileDir,'bookmarkbackups'),existing=await fs.readdir(backupDir).catch((error:NodeJS.ErrnoException)=>{if(error.code!=='ENOENT')throw error;return [];});
+   if(existing.length||await fs.stat(path.join(profileDir,'prefs.js')).catch(()=>null))return {'browser.places.importBookmarksHTML':false,'browser.toolbars.bookmarks.visibility':'always'};
+   const guids=bookmarkGuids(profile),type='text/x-moz-place-container',date=new Date(),pad=(n:number)=>String(n).padStart(2,'0'),day=date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());
+   const backup={guid:'root________',root:'placesRoot',type,children:[{guid:'toolbar_____',root:'toolbarFolder',type,title:'Bookmarks Toolbar',children:entries.map((entry,i)=>({guid:guids[i],type:'text/x-moz-place',title:entry.name,uri:entry.url,dateAdded:Date.now()*1000,lastModified:Date.now()*1000}))}]};
+   const backupFile='bookmarks-'+day+'.json';await writeAtomic(path.join(backupDir,backupFile),JSON.stringify(backup));
+   await writeAtomic(marker,JSON.stringify({signature:hash,folder,profileId:profile.id,guids,enabled,bootstrap:true,backupFile}));
+   return {'browser.places.importBookmarksHTML':false,'browser.toolbars.bookmarks.visibility':'always'};
   }
   try{await fs.access(dbFile);const {DatabaseSync}=await import('node:sqlite');const db=new DatabaseSync(dbFile);try{
    const toolbar=db.prepare("SELECT id FROM moz_bookmarks WHERE guid='toolbar_____'").get() as {id:number}|undefined;if(!toolbar)throw new Error('火狐书签根目录无效，未覆盖');

@@ -5,11 +5,19 @@ import os from 'node:os';
 import path from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import sites from '../resources/bookmark-sites.json';
-import {generatedBookmarks,prepareBookmarks,bookmarkFolder,placesUrlHash} from '../src/main/bookmarks';
+import {generatedBookmarks,prepareBookmarks,bookmarkFolder,bookmarkGuids,placesUrlHash} from '../src/main/bookmarks';
 import {newProfile} from '../src/shared/model';
 test('bookmark pool contains 10000+ unique real hostnames and stable independent 60-item selections',()=>{
  assert.ok(sites.length>10000);assert.equal(new Set(sites).size,sites.length);assert.ok(sites.every(s=>/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(s)));
  const p=newProfile('test-a','123');const a=generatedBookmarks(p);assert.equal(a.length,60);assert.equal(new Set(a.map(x=>x.url)).size,60);assert.deepEqual(generatedBookmarks(p),a);assert.notDeepEqual(generatedBookmarks({...p,id:'test-b'}),a);assert.notDeepEqual(generatedBookmarks({...p,seed:'124'}),a);
+});
+test('new Firefox bootstraps native backup without a preparatory browser and never overwrites existing backups',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-first-bookmarks-')),p=newProfile('bootstrap','123');p.values.engine='firefox';
+ try{const prefs=await prepareBookmarks(p,root,true,'missing-browser.exe');assert.equal(prefs['browser.places.importBookmarksHTML'],false);const folder=path.join(root,'bookmarkbackups'),files=await fs.readdir(folder);assert.equal(files.length,1);const tree=JSON.parse(await fs.readFile(path.join(folder,files[0]),'utf8'));const toolbar=tree.children[0];assert.equal(toolbar.guid,'toolbar_____');assert.deepEqual(toolbar.children.map((b:any)=>b.guid),bookmarkGuids(p));assert.deepEqual(toolbar.children.map((b:any)=>({name:b.title,url:b.uri})),generatedBookmarks(p));const before=await fs.readFile(path.join(folder,files[0]));await prepareBookmarks({...p,seed:'456'},root,true,'missing-browser.exe');assert.deepEqual(await fs.readFile(path.join(folder,files[0])),before);}finally{await fs.rm(root,{recursive:true,force:true});}
+});
+test('disabling bookmarks before first Firefox launch removes only its own pending bootstrap',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-bootstrap-disable-')),p=newProfile('pending','123');p.values.engine='firefox';
+ try{await prepareBookmarks(p,root,true,'missing-browser.exe');const dir=path.join(root,'bookmarkbackups');await fs.writeFile(path.join(dir,'user-backup.json'),'keep');await prepareBookmarks(p,root,false);assert.deepEqual(await fs.readdir(dir),['user-backup.json']);assert.equal(await fs.readFile(path.join(dir,'user-backup.json'),'utf8'),'keep');}finally{await fs.rm(root,{recursive:true,force:true});}
 });
 test('legacy Chromium folder migrates directly to toolbar and retains additions inside it',async()=>{
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'qijing-legacy-bookmarks-'));try{

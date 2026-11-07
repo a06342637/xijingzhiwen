@@ -1,3 +1,5 @@
+import {browserBatch} from './browser-batch';
+import {closeWindowHelpers,warmWindowHelper} from './window-native';
 import {proxyForIndex} from '../shared/proxy-input';
 import {LocalApi} from './local-api';
 import {app,BrowserWindow,ipcMain,safeStorage,dialog,shell,nativeTheme} from 'electron';
@@ -73,7 +75,7 @@ const handlers:Record<string,(p:any)=>Promise<any>>={
  'profile.focus':async p=>browsers.focus(stringId(p)),
  'windows.inventory':async()=>windowLayouts.inventory(),
  'windows.arrange':async p=>windowLayouts.apply(p),
- 'profile.batch':async p=>{const ids=z.array(idSchema).max(100).parse(p.ids);const action=z.enum(['start','stop']).parse(p.action);const results=[];for(const id of ids){try{await(action==='start'?browsers.start(id):browsers.stop(id));results.push({id,ok:true});}catch(e){results.push({id,ok:false,error:String(e)});}}return results;},
+ 'profile.batch':async p=>{const ids=z.array(idSchema).max(100).parse(p.ids);const action=z.enum(['start','stop']).parse(p.action);return browserBatch(ids,action,browsers,store.settings().maxBrowsers);},
  'profile.upgrade':async p=>browsers.upgrade(stringId(p),z.string().max(120).parse(p.kernelId)),
  'profile.diagnose':async p=>browsers.diagnose(stringId(p)),
  'profile.downloads':async p=>{const id=stringId(p);const profile=store.get<Profile>('profile',id);const dir=profile.downloadDir||inside(store.root,'downloads',id);await fs.mkdir(dir,{recursive:true});return shell.openPath(dir);},
@@ -121,8 +123,10 @@ async function initialize(){
  ipcMain.handle('qijing:request',async(event,action,payload)=>{try{if(!window||event.sender!==window.webContents||!event.senderFrame||event.senderFrame!==window.webContents.mainFrame)throw new Error('请求来源无效');if(closing)throw new Error('软件正在关闭');if(typeof action!=='string'||!Object.hasOwn(handlers,action))throw new Error('操作不受支持');const data=await handlers[action](payload);if(!closing)changed();return {ok:true,data};}catch(error){return {ok:false,error:error instanceof Error?error.message:String(error)};}});
  window=new BrowserWindow({width:1280,height:880,minWidth:860,minHeight:650,title:'栖境',icon:path.join(resources,'config','icon.png'),backgroundColor:'#f6f7f9',show:!process.env.QIJING_SMOKE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.on('will-attach-webview',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_wc,_permission,callback)=>callback(false));
- await window.loadFile(path.join(__dirname,'index.html'));if(!process.env.QIJING_SMOKE){window.show();if(app.isPackaged&&store.settings().automaticUpdates!==false){const timer=setTimeout(()=>{if(!closing)void softwareUpdates.check().catch(error=>{notice='检查软件更新失败：'+String(error);changed();});},5000);timer.unref();window.once('closed',()=>clearTimeout(timer));}}
+ await window.loadFile(path.join(__dirname,'index.html'));if(!process.env.QIJING_SMOKE){window.show();const warmTimer=setTimeout(()=>{if(!closing)warmWindowHelper(path.join(resources,'config','window-layout.ps1'));},1500);warmTimer.unref();window.once('closed',()=>clearTimeout(warmTimer));if(app.isPackaged&&store.settings().automaticUpdates!==false){const timer=setTimeout(()=>{if(!closing)void softwareUpdates.check().catch(error=>{notice='检查软件更新失败：'+String(error);changed();});},5000);timer.unref();window.once('closed',()=>clearTimeout(timer));}}
  window.on('close',event=>{if(allowUpdateQuit)return;event.preventDefault();if(closing||closePending)return;closePending=true;void(async()=>{if(kernels.preparing||components.preparing||browsers.operating||store.saving||windowLayouts?.arranging||localApi?.operating)throw new Error('内核或诊断组件正在下载、验证或采集，请完成后关闭');if(Object.keys(browsers.running()).length&&!await confirm('关闭栖境并关闭浏览器？','正在运行的环境会正常关闭，登录数据由浏览器保存。'))return;closing=true;await localApi.stop();await browsers.stopAll();store.close();window?.destroy();app.quit();})().catch(error=>{closing=false;notice=error instanceof Error?error.message:String(error);changed();}).finally(()=>{closePending=false;});});
- if(process.env.QIJING_SMOKE){try{const {runSmoke}=await import('./smoke-internal');await runSmoke({store,kernels,browsers,components,window,state,handlers});await localApi.stop();app.exit(0);}catch(error){const output=path.resolve(process.env.QIJING_SMOKE_OUTPUT||path.join(devDir,'.verification'));await fs.mkdir(output,{recursive:true});await fs.writeFile(path.join(output,'smoke-error.txt'),String(error instanceof Error?error.stack:error));await browsers.stopAll();app.exit(1);}}
+ if(process.env.QIJING_SMOKE){try{const {runSmoke}=await import('./smoke-internal');await runSmoke({store,kernels,browsers,components,window,state,handlers});await localApi.stop();closeWindowHelpers();app.exit(0);}catch(error){const output=path.resolve(process.env.QIJING_SMOKE_OUTPUT||path.join(devDir,'.verification'));await fs.mkdir(output,{recursive:true});await fs.writeFile(path.join(output,'smoke-error.txt'),String(error instanceof Error?error.stack:error));await browsers.stopAll();closeWindowHelpers();app.exit(1);}}
 }
 app.on('window-all-closed',()=>app.quit());
+
+app.on('will-quit',closeWindowHelpers);
