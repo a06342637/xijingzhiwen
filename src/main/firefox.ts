@@ -14,7 +14,8 @@ export function firefoxIdentity(p:Profile,version:string,allowed?:ControlledFeat
  const config:Record<string,unknown>={'navigator.userAgent':ua,'headers.User-Agent':ua,'navigator.platform':platform,'navigator.oscpu':oscpu,'navigator.hardwareConcurrency':Number(v.cpu),'navigator.maxTouchPoints':Number(v.touch),'screen.width':Number(v.screenWidth),'screen.height':Number(v.screenHeight),'screen.availWidth':Number(v.screenWidth),'screen.availHeight':Number(v.screenHeight)-Number(v.taskbarHeight),'screen.colorDepth':24,'screen.pixelDepth':24};
  if(allowed&&!allowed.hardwareIdentity)delete config['navigator.hardwareConcurrency'];
  if(allowed&&!allowed.displayTesting)delete config['navigator.maxTouchPoints'];
- if(v.viewportMode!=='fixed')Object.assign(config,{'window.outerWidth':Number(v.windowWidth),'window.outerHeight':Number(v.windowHeight)});
+ // Window geometry stays native so OS tiling can resize the content area.
+
  if(v.locale){const l=new Intl.Locale(String(v.locale));Object.assign(config,{'navigator.language':String(v.locale),'headers.Accept-Language':String(v.locale),'locale:language':l.language,'locale:all':String(v.locale)});if(l.region)config['locale:region']=l.region;}
  if(v.timezone)config.timezone=v.timezone;
  if(v.webrtcMode==='custom')config[isIP(String(v.webrtcIp))===6?'webrtc:ipv6':'webrtc:ipv4']=v.webrtcIp;

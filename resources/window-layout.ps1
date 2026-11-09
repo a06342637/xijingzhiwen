@@ -14,6 +14,7 @@ public class QijingWindows {
  [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern bool GetMonitorInfo(IntPtr h,ref MONITORINFO m);
  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
+ [DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr h);
  [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h,out uint p);
  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h,out RECT r);
@@ -56,10 +57,10 @@ if($request.action -eq 'inventory'){
 }elseif($request.action -eq 'apply'){
  $results=@(foreach($placement in $request.placements){$matched=$windows | Where-Object { $_.profileId -eq $placement.profileId -and $_.handle -eq $placement.handle -and $_.processId -eq $placement.processId } | Select-Object -First 1
  if(!$matched){[PSCustomObject]@{profileId=$placement.profileId;ok=$false;error='window_changed'};continue}
- $handle=[IntPtr]([long]$matched.handle);if([QijingWindows]::IsIconic($handle)){[void][QijingWindows]::ShowWindowAsync($handle,9)}$r=$placement.bounds
+ $handle=[IntPtr]([long]$matched.handle);if([QijingWindows]::IsIconic($handle) -or [QijingWindows]::IsZoomed($handle)){[void][QijingWindows]::ShowWindowAsync($handle,9)}$r=$placement.bounds
  $success=[QijingWindows]::SetWindowPos($handle,[IntPtr]::Zero,$r.x,$r.y,$r.width,$r.height,0x4014)
  $actual=WindowBounds $handle
- for($attempt=0;$success -and $attempt -lt 10 -and ([Math]::Abs($actual.x-$r.x) -gt 2 -or [Math]::Abs($actual.y-$r.y) -gt 2 -or [Math]::Abs($actual.width-$r.width) -gt 2 -or [Math]::Abs($actual.height-$r.height) -gt 2);$attempt++){Start-Sleep -Milliseconds 10;$actual=WindowBounds $handle}
+ for($attempt=0;$success -and $attempt -lt 20 -and ([Math]::Abs($actual.x-$r.x) -gt 2 -or [Math]::Abs($actual.y-$r.y) -gt 2 -or [Math]::Abs($actual.width-$r.width) -gt 2 -or [Math]::Abs($actual.height-$r.height) -gt 2);$attempt++){Start-Sleep -Milliseconds 40;if([QijingWindows]::IsZoomed($handle)){[void][QijingWindows]::ShowWindowAsync($handle,9)}$success=[QijingWindows]::SetWindowPos($handle,[IntPtr]::Zero,$r.x,$r.y,$r.width,$r.height,0x0014);$actual=WindowBounds $handle}
  [PSCustomObject]@{profileId=$placement.profileId;ok=$success;bounds=$actual;requested=$r;error=$(if(!$success){'window_position_denied'}else{''})}
  });@{results=$results} | ConvertTo-Json -Depth 7 -Compress
 }else{throw 'Unsupported window operation'}

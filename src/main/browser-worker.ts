@@ -1,3 +1,4 @@
+import {fitDesktopViewport} from './desktop-viewport';
 import fs from 'node:fs/promises';
 import {initializeChromiumSearch} from './search-defaults';
 import path from 'node:path';
@@ -10,6 +11,7 @@ import {checkProxyRoute} from './proxy-check';
 import {launchDashboard} from './dashboard';
 import {applyControlledProfile} from '../shared/controlled-features';
 import {mobileMetrics} from '../shared/devices';
+const firefoxDriver=process.env.QIJING_WORKER_ENGINE==='firefox'?import('playwright-firefox-driver'):undefined;void firefoxDriver?.catch(()=>{});
 let resolvedGeo:unknown;
 const pageReady=new WeakMap<object,Promise<void>>();
 let context:any,profile:any,kernel:any,initial:any,dashboard:Awaited<ReturnType<typeof launchDashboard>>|undefined;
@@ -25,7 +27,7 @@ async function diagnostic(){
 }
 async function start(payload:any){
  profile=applyControlledProfile(payload.profile,payload.controlledFeatures);kernel=payload.kernel;initial=payload;secretValues=[payload.proxy?.password,payload.proxy?.username].filter(Boolean);
- const matched=await resolveProxyLocale(profile,payload.proxy,payload.fingerprintLocks);profile=applyControlledProfile(matched.profile,payload.controlledFeatures);resolvedGeo=matched.geo;
+ const matched=payload.resolvedProxyLocale||await resolveProxyLocale(profile,payload.proxy,payload.fingerprintLocks);profile=applyControlledProfile(matched.profile,payload.controlledFeatures);resolvedGeo=matched.geo;
  if(payload.proxy&&matched.geo&&profile.values.randomStrategy!=='catalog')send({event:'notice',error:'已通过绑定代理匹配当前出口；供应商 DNS、TCP 特征和后续出口轮换仍需实测，建议使用固定会话。'});
  process.env.CLOAKBROWSER_BINARY_PATH=kernel.path;process.env.CLOAKBROWSER_WIDEVINE=profile.values.widevine==='disabled'?'0':'1';if(profile.values.widevine==='custom')process.env.CLOAKBROWSER_WIDEVINE_CDM=profile.values.widevinePath;
  const lib=profile.values.engine==='firefox'?undefined:await sdk();
@@ -47,12 +49,16 @@ async function start(payload:any){
  context.pages().forEach(attach);context.on('page',attach);
  send({event:'started'});
  if(!payload.blank){
+  void(async()=>{
   if(payload.startupDashboard!==false){try{const geo=resolvedGeo as any;dashboard=await launchDashboard(context,{profileName:profile.name,engine:profile.values.engine,kernelVersion:kernel.version,architecture:kernel.arch,proxy:Boolean(payload.proxy),diagnosticLinks:payload.diagnosticLinks!==false,startup:geo?{exitIp:geo.exitIp,timezone:geo.timezone,locale:geo.locale}:undefined},async page=>{await pageReady.get(page);},safeError);}catch(error){send({event:'notice',error:'启动检测总览失败：'+safeError(error)});}}
   const active=context,urls=profile.startUrls.filter((url:string)=>!dashboard||url!=='about:blank');
   void(async()=>{const pages=active.pages();for(const [i,url] of urls.entries()){if(active.pages().length===0)return;try{const page=!dashboard&&i===0&&pages[0]?pages[0]:await active.newPage();await pageReady.get(page);await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});}catch(error){if(active.pages().length===0)return;send({event:'notice',error:safeError(error)});}}if(dashboard&&!dashboard.page.isClosed())await dashboard.page.bringToFront();})().catch(error=>send({event:'notice',error:safeError(error)}));
+  })().catch(error=>send({event:'notice',error:safeError(error)}));
  }
 }
 async function request(action:string,payload:any){
+ if(action==='layoutSmoke'&&process.env.QIJING_SMOKE==='1'){const page=context.pages().find((p:any)=>p.url()==='about:blank')||context.pages()[0];await page.setContent('<html><body style="margin:0;background:white"><div style="width:100%;height:100vh;background:linear-gradient(90deg,#deedfc,#c7eaca)">Native viewport</div></body></html>');await page.screenshot({path:payload.screenshot});return page.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio,screenWidth:screen.width,screenHeight:screen.height}));}
+ if(action==='fitViewport'){if(!context)throw new Error('环境未运行');if(profile.mode==='measured'||profile.values.deviceType!=='desktop')return {fitted:false};if(profile.values.viewportMode==='native')return {fitted:true};await fitDesktopViewport(context,profile.values.engine);profile.values.viewportMode='native';if(dashboard)await dashboard.page.evaluate(()=>window.dispatchEvent(new Event('resize')));return {fitted:true};}
  if(action==='extensionPopupSmoke'&&process.env.QIJING_SMOKE==='1'){
   const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker');await worker.evaluate(async()=>{await (globalThis as any).qijingOpenPopupWindow();});const page=context.pages().find((p:any)=>p.url().startsWith('chrome-extension:'))||await context.waitForEvent('page');await page.waitForLoadState('load');await pageReady.get(page);await page.waitForTimeout(300);const session=await context.newCDPSession(page);await session.detach();await page.waitForTimeout(200);await page.screenshot({path:payload.screenshot});return page.evaluate(()=>({width:innerWidth,height:innerHeight,title:document.title,text:document.body.innerText.slice(0,500)}));
  }

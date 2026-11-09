@@ -45,6 +45,8 @@ jobs:
           QIJING_SMOKE_API: '1'
           QIJING_SMOKE_PROXY_BATCH: '1'
           QIJING_SMOKE_WINDOW_LAYOUT: '1'
+          QIJING_SMOKE_START_TILE_UI: '1'
+          QIJING_SMOKE_PROXY_LIBRARY: '1'
           QIJING_SMOKE_FINGERPRINT_PRESETS: '1'
           QIJING_SMOKE_CONTROLS: '1'
       - name: Prepare release directory

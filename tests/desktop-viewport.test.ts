@@ -1,0 +1,8 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {fitDesktopViewport} from '../src/main/desktop-viewport';
+test('desktop layout clears pinned viewport and future page defaults through native driver',async()=>{
+ const calls:any[]=[],page:any={_viewportSize:{width:1400,height:900}},native={_setEmulatedSize:(value:any)=>calls.push(['size',value]),delegate:{updateEmulatedViewportSize:async()=>calls.push(['page'])}},impl={_options:{viewport:{width:1400,height:900},screen:{width:3024,height:1964},deviceScaleFactor:2},_browserContextId:'test',_browser:{session:{send:async(method:string,args:any)=>calls.push([method,args])}}};const context={_connection:{toImpl:()=>impl},pages:()=>[page]};page._connection={toImpl:()=>native};await fitDesktopViewport(context,'firefox');assert.equal(impl._options.viewport,null);assert.equal('screen' in impl._options,false);assert.equal(page._viewportSize,null);assert.equal(calls[0][0],'Browser.setDefaultViewport');assert.equal(calls[0][1].viewport,null);
+});
+
+test('Chromium clears the existing metrics session so disconnect cannot restore old viewport',async()=>{const calls:any[]=[];const session={_metricsOverride:{width:1440},_client:{send:async(method:string)=>calls.push(method)}};const page:any={_viewportSize:{width:1440}};const native={_setEmulatedSize:()=>{},delegate:{updateEmulatedViewportSize:async()=>{},_mainFrameSession:session}};const context:any={_connection:{toImpl:()=>({_options:{viewport:{width:1440}}})},pages:()=>[page]};page._connection={toImpl:()=>native};await fitDesktopViewport(context,'chromium');assert.deepEqual(calls,['Emulation.clearDeviceMetricsOverride']);assert.equal(session._metricsOverride,undefined);assert.equal(page._viewportSize,null);});
