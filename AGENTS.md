@@ -2,6 +2,7 @@
 
 - 当前项目目录为 `C:\Users\adminuser\Downloads\xijingzhiwen`。不要恢复旧的 `Documents\ChatGPT\杂3\qijing` 项目目录。
 - 发行产物放在 `C:\Users\adminuser\Downloads\xijing发行版本\<版本号>`；路径由 `package.json` 和 `scripts/release-path.mjs` 管理。
+- 本地仅保留源码、必需资源及 Git。每次发布在 GitHub 全部附件上传、摘要校验并确认公开成功后，自动删除该版本发行目录、`dist`、`vendor-resources`、`.test-data`、`.verification` 与 `node_modules`；发布失败时保留产物以便重试。不要把日常安装软件或用户数据放入这些目录，独立项目放到项目外。
 - GitHub 仓库为 `a06342637/xijingzhiwen`。发布使用 `scripts/publish.mjs`，先完整上传草稿附件再公开，不能替换已公开版本的二进制文件。
 - Windows ARM64 与 x64 更新分别使用 `latest-arm64.yml` 和 `latest.yml`。发布前核对各自安装包及 SHA-512。
 - 主动卸载清除软件数据及更新缓存；在线更新、覆盖安装保留环境数据。保持应用标识和数据目录兼容。

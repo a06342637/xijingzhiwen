@@ -4,6 +4,8 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createReadStream} from 'node:fs';
 import {releaseDir,pkg} from './release-path.mjs';
+import {cleanupLocalArtifacts} from './cleanup-local.mjs';
+import {fileURLToPath} from 'node:url';
 const gh=(...args)=>execFileSync('gh',args,{encoding:'utf8',stdio:['ignore','pipe','inherit']}).trim();
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 if(git('status','--porcelain'))throw new Error('Commit all source changes before publishing');
@@ -31,4 +33,10 @@ gh('release','upload',tag,...files.map(file=>path.join(releaseDir,file)),'--repo
 const uploaded=JSON.parse(gh('release','view',tag,'--repo',repo,'--json','assets')).assets;
 for(const file of files){const asset=uploaded.find(a=>a.name===file);const hash=createHash('sha256');for await(const chunk of createReadStream(path.join(releaseDir,file)))hash.update(chunk);if(!asset||asset.size!==(await fs.stat(path.join(releaseDir,file))).size||asset.digest!=='sha256:'+hash.digest('hex'))throw new Error('Missing, incomplete or checksum-mismatched release asset: '+file);}
 gh('release','edit',tag,'--repo',repo,'--draft=false','--latest');
-console.log(gh('release','view',tag,'--repo',repo,'--json','url','--jq','.url'));
+const published=JSON.parse(gh('release','view',tag,'--repo',repo,'--json','url,isDraft,tagName,assets'));
+if(published.isDraft||published.tagName!==tag)throw new Error('Release was not confirmed public; keep local artifacts');
+for(const file of files){const asset=published.assets.find(a=>a.name===file),original=uploaded.find(a=>a.name===file);if(!asset||asset.size!==original.size||asset.digest!==original.digest)throw new Error('Public release assets differ; keep local artifacts');}
+console.log(published.url);
+const root=fileURLToPath(new URL('..',import.meta.url));
+const removed=await cleanupLocalArtifacts({root,releaseDir,version:pkg.version});
+console.log('Published and verified; removed local generated artifacts: '+removed.join(', '));

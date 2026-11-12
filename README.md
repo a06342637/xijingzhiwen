@@ -170,7 +170,7 @@ npm run pack
 
 源码目录 `C:\Users\adminuser\Downloads\xijingzhiwen`；产物目录相邻 `xijing发行版本/<版本号>`。上游固定提交与诊断组件摘要位于 `resources/upstream.json`、`resources/components.json`，第三方许可证保留在安装资源及 `dist/licenses/`。
 
-后续更新修改版本号、release notes、README 和验证报告，提交 main 并推送 `vX.Y.Z`。GitHub Actions 分别构建/检查 ARM64 与 x64，生成独立 `latest-arm64.yml` / `latest.yml`；`scripts/publish.mjs` 完整上传校验草稿后公开，不覆盖已发布二进制。
+后续更新修改版本号、release notes、README 和验证报告，提交 main 并推送 `vX.Y.Z`。GitHub Actions 分别构建/检查 ARM64 与 x64，生成独立 `latest-arm64.yml` / `latest.yml`；`scripts/publish.mjs` 完整上传校验草稿后公开，不覆盖已发布二进制。确认公开后的附件摘要、大小完整一致，立即清理本版本发行目录，以及项目内的 `dist`、`vendor-resources`、`.test-data`、`.verification`、`node_modules`，本地不积累历史版本。上传/校验/公开失败时保留产物供重试。日常软件请安装到 `%LOCALAPPDATA%\Programs\栖境` 等项目外目录。
 
 ## 0.1.21 修复
 
@@ -197,3 +197,7 @@ Firefox新环境使用原生JSON书签备份在单次正式启动中初始化，
 勾选环境后点击批量栏“平铺并启动”，等待全部启动结束后自动左右/网格平铺到当前屏幕；已运行环境直接参与，失败项单独提示。最多4个环境并行准备，仍遵守同时运行上限。桌面平铺将本次运行的固定页面视口清除，随窗口内容区域响应，不改写环境保存值，重启仍按原配置。screen.width/height是环境屏幕身份，不要求等于分屏窗口尺寸；页面innerWidth/height需匹配窗口内容区。移动布局与实测环境不清除其专用视口。
 
 代理管理仅显示从该页面手动保存的代理库。环境创建时粘贴、批量绑定和API创建的代理不列入手动库；原环境代理绑定继续有效，需在环境中编辑。此前版本没有记录添加来源的代理默认保留绑定，但不自动列入手动库；可在代理管理重新手动保存需要的节点。手动库节点保留直到主动删除，不随环境清理。
+
+## 只保留源码
+
+本地项目保留 `.git`、`src`、`tests`、`scripts`、`resources`、`vendor`、依赖锁文件和文档；`vendor` 是构建所需的已维护源码，不是浏览器内核。开发前运行 `npm ci` 恢复依赖，再运行 `npm run build`。测试目录、下载的内核、安装包和编译产物可重新生成，发布成功后不保留；另一项目应放在该源码目录外。
